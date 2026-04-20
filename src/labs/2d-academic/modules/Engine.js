@@ -155,15 +155,25 @@ export class Engine {
         
         this.updateThemeCache();
         
-        this.labs.mechanics = new MechanicsLab(this);
-        this.labs.thermo = new ThermoLab(this);
-        this.labs.optics = new OpticsLab(this);
-        this.labs.electro = new ElectroLab(this);
+        const safeInit = (name, labClass) => {
+            try {
+                this.labs[name] = new labClass(this);
+            } catch (err) {
+                console.error(`Failed to init lab [${name}]:`, err);
+            }
+        };
+
+        safeInit('mechanics', MechanicsLab);
+        safeInit('thermo', ThermoLab);
+        safeInit('optics', OpticsLab);
+        safeInit('electro', ElectroLab);
         
-        this.chat = new ChatController(this);
-        // this.missions = new MissionManager(this); // Handled by main.js or here? 
-        // Let's keep it here but ensure main.js doesn't duplicate it.
-        this.missions = new MissionManager(this);
+        try {
+            this.chat = new ChatController(this);
+            this.missions = new MissionManager(this);
+        } catch (err) {
+            console.error("Failed to init Chat or Missions:", err);
+        }
         
         this.setupEventListeners();
         
@@ -313,7 +323,6 @@ export class Engine {
         if (refreshBtn) {
             refreshBtn.onclick = () => this.missions.generateAIMissions(true);
         }
-        });
 
         if (this.canvas) {
             this.canvas.onmousedown = (e) => this.handleMouseDown(e);

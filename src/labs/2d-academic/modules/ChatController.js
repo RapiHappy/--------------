@@ -3,7 +3,11 @@ export class ChatController {
         this.engine = engine;
         this.isOpen = false;
         this.messages = [];
-        this.openaiKey = import.meta.env.VITE_OPENAI_API_KEY;
+        try {
+            this.openaiKey = import.meta?.env?.VITE_OPENAI_API_KEY || '';
+        } catch(e) {
+            this.openaiKey = '';
+        }
         this.setupUI();
     }
 
