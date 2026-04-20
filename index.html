@@ -246,20 +246,26 @@
         import { i18n } from './src/shared/I18nManager.js';
         import { MasterVortexLoader } from './src/shared/SpecialEffects.js';
 
-        window.onload = () => {
-            const loader = new MasterVortexLoader('hubCanvas', 'TECHPHYS HUB');
-            
-            new PremiumControls();
-            i18n.init(); 
+        // Initialize immediately but start sequence after a small delay
+        const loader = new MasterVortexLoader('hubCanvas', 'TECHPHYS HUB');
+        new PremiumControls();
+        setTimeout(() => i18n.init(), 100);
 
+        // Fail-safe: Ensure preloader disappears even if window.onload is stuck
+        const startSequence = () => {
+            const preloader = document.getElementById('preloader');
+            if (!preloader || preloader.style.display === 'none') return;
+            
+            preloader.style.opacity = '0';
             setTimeout(() => {
-                const preloader = document.getElementById('preloader');
-                preloader.style.opacity = '0';
-                setTimeout(() => {
-                    preloader.style.display = 'none';
-                    loader.stop();
-                }, 1000);
-            }, 3500);
+                preloader.style.display = 'none';
+                if (loader) loader.stop();
+            }, 1000);
+        };
+
+        // Trigger after 3.5s or on window load, whichever is first
+        setTimeout(startSequence, 3500);
+        window.addEventListener('load', startSequence);
             
             // Basic translation for Hub
             const texts = {
@@ -296,12 +302,6 @@
         window.hideSoon = () => {
             const modal = document.getElementById('soon-modal');
             if (modal) modal.style.display = 'none';
-        };
-        };
-
-        window.hideSoon = () => {
-            const modal = document.getElementById('soon-modal');
-            modal.style.display = 'none';
         };
     </script>
 </body>

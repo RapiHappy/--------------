@@ -41,8 +41,8 @@ export class MasterVortexLoader {
         const data = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height).data;
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         
-        for (let y = 0; y < this.canvas.height; y += 4) {
-            for (let x = 0; x < this.canvas.width; x += 4) {
+        for (let y = 0; y < this.canvas.height; y += 3) {
+            for (let x = 0; x < this.canvas.width; x += 3) {
                 const index = (y * this.canvas.width + x) * 4;
                 if (data[index + 3] > 128) {
                     this.particles.push(new VortexParticle(x, y, this.canvas.width/2, this.canvas.height/2));
@@ -80,10 +80,11 @@ class VortexParticle {
         this.y = cy + (Math.random() - 0.5) * 500;
         this.originX = this.x;
         this.originY = this.y;
-        this.size = Math.random() * 0.8 + 0.2; // Tiny particles
-        this.color = `hsla(${180 + Math.random() * 40}, 100%, 75%, 0.35)`; // Subtle alpha
-        this.ease = 0.015 + Math.random() * 0.015; // Even slower formation
-        this.friction = 0.98; // Very smooth movement
+        this.size = Math.random() * 1.8 + 0.6; // Slightly more presence
+        const hue = Math.random() > 0.5 ? 180 + Math.random() * 40 : 300 + Math.random() * 40; // Cyan or Pink
+        this.color = `hsla(${hue}, 100%, 75%, 0.7)`; // Vibrant but soft alpha
+        this.ease = 0.025 + Math.random() * 0.025; // Smooth yet dynamic
+        this.friction = 0.95; // Balanced movement
         this.vx = 0;
         this.vy = 0;
     }
@@ -114,9 +115,12 @@ class VortexParticle {
 
     draw(ctx) {
         ctx.fillStyle = this.color;
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = this.color;
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
         ctx.fill();
+        ctx.shadowBlur = 0; 
     }
 }
 
