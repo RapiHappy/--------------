@@ -228,10 +228,15 @@ export class QuantumPulseLoader {
         this.active = true;
         this.angle = 0;
         this.circles = [
-            { r: 80, speed: 0.02, color: '#00f0ff', pCount: 8 },
-            { r: 120, speed: -0.015, color: '#ff00ff', pCount: 12 },
-            { r: 160, speed: 0.01, color: '#a855f7', pCount: 6 }
+            { r: 90, speed: 0.05, color: '#00f0ff', pCount: 12 },
+            { r: 140, speed: -0.04, color: '#ff00ff', pCount: 16 },
+            { r: 190, speed: 0.03, color: '#a855f7', pCount: 10 }
         ];
+        this.stars = Array.from({length: 100}, () => ({
+            x: Math.random() * 2 - 1,
+            y: Math.random() * 2 - 1,
+            s: Math.random() * 2
+        }));
         
         this.resize();
         this.animate();
@@ -246,10 +251,10 @@ export class QuantumPulseLoader {
     animate() {
         if (!this.active) return;
         
-        this.ctx.fillStyle = 'rgba(5, 6, 8, 0.15)';
+        this.ctx.fillStyle = 'rgba(5, 6, 8, 0.08)'; // Higher trail persistence
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         
-        this.angle += 0.02;
+        this.angle += 0.04; // Faster
         const cx = this.canvas.width / 2;
         const cy = this.canvas.height / 2;
         
@@ -260,8 +265,8 @@ export class QuantumPulseLoader {
             
             // Draw Orbit Ring
             this.ctx.strokeStyle = c.color;
-            this.ctx.lineWidth = 1;
-            this.ctx.globalAlpha = 0.1;
+            this.ctx.lineWidth = 3;
+            this.ctx.globalAlpha = 0.4; // MUCH MORE VISIBLE
             this.ctx.beginPath();
             this.ctx.arc(cx, cy, c.r, 0, Math.PI * 2);
             this.ctx.stroke();
@@ -274,22 +279,44 @@ export class QuantumPulseLoader {
                 const px = cx + Math.cos(a) * c.r;
                 const py = cy + Math.sin(a) * c.r;
                 
-                const grad = this.ctx.createRadialGradient(px, py, 0, px, py, 15);
+                const grad = this.ctx.createRadialGradient(px, py, 0, px, py, 40);
                 grad.addColorStop(0, c.color);
                 grad.addColorStop(1, 'transparent');
                 
                 this.ctx.fillStyle = grad;
                 this.ctx.beginPath();
-                this.ctx.arc(px, py, 15, 0, Math.PI * 2);
+                this.ctx.arc(px, py, 40, 0, Math.PI * 2);
                 this.ctx.fill();
                 
-                // Core particle
                 this.ctx.fillStyle = '#fff';
                 this.ctx.beginPath();
-                this.ctx.arc(px, py, 2, 0, Math.PI * 2);
+                this.ctx.arc(px, py, 4, 0, Math.PI * 2);
                 this.ctx.fill();
             }
         });
+
+        // DRAW STARS
+        this.ctx.fillStyle = '#fff';
+        this.stars.forEach(s => {
+            const x = cx + s.x * cx + Math.cos(this.angle) * 20;
+            const y = cy + s.y * cy + Math.sin(this.angle) * 20;
+            this.ctx.globalAlpha = Math.random() * 0.5 + 0.2;
+            this.ctx.fillRect(x, y, s.s, s.s);
+        });
+        this.ctx.globalAlpha = 1.0;
+
+        // DRAW CENTRAL QUANTUM CORE
+        const pulse = Math.sin(this.angle * 3) * 8 + 30;
+        const coreGrad = this.ctx.createRadialGradient(cx, cy, 0, cx, cy, pulse * 2.5);
+        coreGrad.addColorStop(0, '#fff');
+        coreGrad.addColorStop(0.2, '#00f0ff');
+        coreGrad.addColorStop(0.5, 'rgba(0, 240, 255, 0.3)');
+        coreGrad.addColorStop(1, 'transparent');
+        
+        this.ctx.fillStyle = coreGrad;
+        this.ctx.beginPath();
+        this.ctx.arc(cx, cy, pulse * 2, 0, Math.PI * 2);
+        this.ctx.fill();
         
         this.ctx.globalCompositeOperation = 'source-over';
         requestAnimationFrame(() => this.animate());

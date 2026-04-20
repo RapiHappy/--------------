@@ -1,14 +1,14 @@
 import { Engine } from './modules/Engine.js';
-import { LoaderEngine } from './modules/LoaderEngine.js';
 import { TutorialManager } from './modules/TutorialManager.js';
 import { MissionManager } from './modules/MissionManager.js';
 import { PremiumControls } from '../../shared/PremiumControls.js';
 import { i18n } from '../../shared/I18nManager.js';
+import { QuantumPulseLoader } from '../../shared/SpecialEffects.js';
 
 window.onload = () => {
     let loader;
     try {
-        loader = new LoaderEngine();
+        loader = new QuantumPulseLoader('loaderCanvas', 'TECHPHYS ACADEMIC');
     } catch (e) {
         console.error("Loader failed:", e);
     }

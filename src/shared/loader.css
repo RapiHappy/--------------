@@ -36,34 +36,39 @@ canvas[id$="Canvas"] {
     font-size: 4rem;
     letter-spacing: 0.1em;
     margin-bottom: 20px;
-    text-shadow: 0 0 30px rgba(255,255,255,0.2);
+    text-shadow: 0 0 40px rgba(255,255,255,0.4);
     color: #fff;
     opacity: 0;
-    animation: loader-fade-in 1.5s forwards 0.5s;
+    animation: loader-fade-in 1s forwards 0.2s;
 }
 
-/* HUB SPECIFIC (Outfit font) */
+/* SHARED ACCENT */
+.accent { 
+    background: linear-gradient(90deg, #00f0ff, #ff00ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 15px rgba(0, 240, 255, 0.5));
+    font-weight: 800;
+}
+
+/* HUB SPECIFIC */
 .hub-loader .loader-logo { font-family: 'Outfit', sans-serif; font-weight: 800; }
-.hub-loader .accent { color: #00f0ff; text-shadow: 0 0 20px #00f0ff; }
 
-/* ACADEMIC SPECIFIC (Standard Sans) */
-.academic-loader .loader-logo { font-family: 'Segoe UI', system-ui, sans-serif; font-weight: 700; }
-.academic-loader .accent { color: #00f0ff; }
+/* ACADEMIC SPECIFIC */
+.academic-loader .loader-logo { font-family: 'Outfit', sans-serif; font-weight: 800; }
 
-/* AR SPECIFIC (Orbitron font) */
+/* AR SPECIFIC */
 .ar-loader .loader-logo { font-family: 'Orbitron', sans-serif; font-weight: 700; letter-spacing: 0.2em; }
-.ar-loader .accent { color: #ff00ff; text-shadow: 0 0 20px #ff00ff; }
 
-/* NEURAL SPECIFIC (JetBrains Mono font) */
+/* NEURAL SPECIFIC */
 .neural-loader .loader-logo { font-family: 'JetBrains Mono', monospace; font-weight: 700; }
-.neural-loader .accent { color: #a855f7; text-shadow: 0 0 20px #a855f7; }
 
 .loader-status {
     font-size: 1rem;
-    color: rgba(255, 255, 255, 0.4);
+    color: rgba(255, 255, 255, 0.6);
     font-style: italic;
     opacity: 0;
-    animation: loader-fade-in 1.2s forwards 1s;
+    animation: loader-fade-in 1s forwards 0.5s;
 }
 
 @keyframes loader-fade-in {
