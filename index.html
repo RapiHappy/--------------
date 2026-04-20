@@ -241,58 +241,61 @@
                 <button class="close-modal-btn" onclick="hideSoon()">ПОНЯТНО</button>
             </div>
         </div>
+    <script>
+        // Non-module fail-safe preloader script
+        (function() {
+            const startSequence = () => {
+                const preloader = document.getElementById('preloader');
+                if (!preloader || preloader.style.display === 'none') return;
+                
+                preloader.style.opacity = '0';
+                setTimeout(() => {
+                    preloader.style.display = 'none';
+                }, 1000);
+            };
+
+            // Force hide after 4 seconds
+            setTimeout(startSequence, 4000);
+            window.addEventListener('load', startSequence);
+        })();
+    </script>
+
     <script type="module">
         import { PremiumControls } from './src/shared/PremiumControls.js';
         import { i18n } from './src/shared/I18nManager.js';
         import { MasterVortexLoader } from './src/shared/SpecialEffects.js';
 
-        // Initialize immediately but start sequence after a small delay
+        // Initialize Premium Features
         const loader = new MasterVortexLoader('hubCanvas', 'TECHPHYS HUB');
         new PremiumControls();
         setTimeout(() => i18n.init(), 100);
 
-        // Fail-safe: Ensure preloader disappears even if window.onload is stuck
-        const startSequence = () => {
-            const preloader = document.getElementById('preloader');
-            if (!preloader || preloader.style.display === 'none') return;
-            
-            preloader.style.opacity = '0';
-            setTimeout(() => {
-                preloader.style.display = 'none';
-                if (loader) loader.stop();
-            }, 1000);
-        };
-
-        // Trigger after 3.5s or on window load, whichever is first
-        setTimeout(startSequence, 3500);
-        window.addEventListener('load', startSequence);
-            
-            // Basic translation for Hub
-            const texts = {
-                ru: {
-                    tagline: "Научная платформа нового поколения",
-                    launch: "Запуск лаборатории",
-                    talk: "Чат с ИИ",
-                    enter: "Войти в AR",
-                    playground: "Открыть песочницу"
-                },
-                en: {
-                    tagline: "Next-Generation Physics Simulation Platform",
-                    launch: "Launch Lab",
-                    talk: "Talk to AI",
-                    enter: "Enter AR",
-                    playground: "Open Playground"
-                }
-            };
-            
-            if (i18n.lang === 'ru') {
-                document.querySelector('.tagline').innerText = texts.ru.tagline;
-                document.querySelectorAll('.btn').forEach((btn, i) => {
-                    const hubTexts = [texts.ru.launch, "Войти в AR", "Чат с ИИ", "Песочница"];
-                    btn.innerText = hubTexts[i];
-                });
+        // Basic translation for Hub
+        const texts = {
+            ru: {
+                tagline: "Научная платформа нового поколения",
+                launch: "Запуск лаборатории",
+                talk: "Чат с ИИ",
+                enter: "Войти в AR",
+                playground: "Открыть песочницу"
+            },
+            en: {
+                tagline: "Next-Generation Physics Simulation Platform",
+                launch: "Launch Lab",
+                talk: "Talk to AI",
+                enter: "Enter AR",
+                playground: "Open Playground"
             }
         };
+        
+        if (i18n.lang === 'ru') {
+            const taglineEl = document.querySelector('.tagline');
+            if (taglineEl) taglineEl.innerText = texts.ru.tagline;
+            document.querySelectorAll('.btn').forEach((btn, i) => {
+                const hubTexts = [texts.ru.launch, "Войти в AR", "Чат с ИИ", "Песочница"];
+                if (hubTexts[i]) btn.innerText = hubTexts[i];
+            });
+        }
 
         window.showSoon = () => {
             const modal = document.getElementById('soon-modal');
