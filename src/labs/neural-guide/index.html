@@ -16,8 +16,19 @@
             }
         }
     </script>
+    <link rel="stylesheet" href="../../shared/loader.css">
 </head>
-<body>
+<body class="neural-body">
+    <!-- PREMIUM PRELOADER -->
+    <div id="preloader" class="neural-loader">
+        <canvas id="neuralCanvas"></canvas>
+        <div class="loader-overlay">
+            <h1 class="loader-logo">TECHPHYS <span class="accent">NEURAL</span></h1>
+            <div class="loader-status">
+                Подключение к нейросети<span class="dots">...</span>
+            </div>
+        </div>
+    </div>
     <div id="webgl-container"></div>
 
     <div id="hud">

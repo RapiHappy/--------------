@@ -22,8 +22,19 @@
       }
     }
     </script>
+    <link rel="stylesheet" href="../../shared/loader.css">
 </head>
 <body class="bg-black text-cyan-400 overflow-hidden font-mono antialiased">
+    <!-- PREMIUM PRELOADER -->
+    <div id="preloader" class="ar-loader">
+        <canvas id="arCanvas"></canvas>
+        <div class="loader-overlay">
+            <h1 class="loader-logo">TECHPHYS <span class="accent">AR</span></h1>
+            <div class="loader-status">
+                Инициализация AR-пространства<span class="dots">...</span>
+            </div>
+        </div>
+    </div>
     <!-- UI Overlay container (z-index над canvas) -->
     <div id="ui-layer" class="absolute inset-0 pointer-events-none flex flex-col justify-between p-4 z-10 w-full h-full">
         

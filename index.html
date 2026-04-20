@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TechPhys Ultimate | Scientific Hub</title>
+    <link rel="stylesheet" href="src/shared/loader.css">
     <style>
         :root {
             --bg: #050608;
@@ -115,6 +116,17 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;800&display=swap" rel="stylesheet">
 </head>
 <body>
+    <!-- PREMIUM PRELOADER -->
+    <div id="preloader" class="hub-loader">
+        <canvas id="hubCanvas"></canvas>
+        <div class="loader-overlay">
+            <h1 class="loader-logo">TECHPHYS <span class="accent">HUB</span></h1>
+            <div class="loader-status">
+                Инициализация платформы<span class="dots">...</span>
+            </div>
+        </div>
+    </div>
+
     <section class="hero">
         <h1 class="logo">TECHPHYS <span style="background: white; -webkit-background-clip: text; -webkit-text-fill-color: transparent; opacity: 0.2">ULTIMATE</span></h1>
         <p class="tagline">Next-Generation Physics Simulation Platform</p>
@@ -152,10 +164,22 @@
     <script type="module">
         import { PremiumControls } from './src/shared/PremiumControls.js';
         import { i18n } from './src/shared/I18nManager.js';
+        import { MasterVortexLoader } from './src/shared/SpecialEffects.js';
 
         window.onload = () => {
+            const loader = new MasterVortexLoader('hubCanvas', 'TECHPHYS HUB');
+            
             new PremiumControls();
-            i18n.init(); // Apply current theme/lang
+            i18n.init(); 
+
+            setTimeout(() => {
+                const preloader = document.getElementById('preloader');
+                preloader.style.opacity = '0';
+                setTimeout(() => {
+                    preloader.style.display = 'none';
+                    loader.stop();
+                }, 1000);
+            }, 3500);
             
             // Basic translation for Hub
             const texts = {

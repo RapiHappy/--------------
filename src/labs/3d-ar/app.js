@@ -1,4 +1,17 @@
 import * as THREE from 'three';
+import { WireframeLoader } from '../../shared/SpecialEffects.js';
+
+window.onload = () => {
+    const loader = new WireframeLoader('arCanvas');
+    setTimeout(() => {
+        const preloader = document.getElementById('preloader');
+        preloader.style.opacity = '0';
+        setTimeout(() => {
+            preloader.style.display = 'none';
+            loader.stop();
+        }, 1000);
+    }, 3500);
+};
 import { ARButton } from 'three/addons/webxr/ARButton.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { PhysicsEngine } from './physics.js';
