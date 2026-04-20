@@ -1,5 +1,5 @@
 import { Engine } from './modules/Engine.js';
-import { LoaderEngine as PlexusLoader } from './modules/LoaderEngine.js';
+import { LoaderEngine } from './modules/LoaderEngine.js';
 import { TutorialManager } from './modules/TutorialManager.js';
 import { MissionManager } from './modules/MissionManager.js';
 import { PremiumControls } from '../../shared/PremiumControls.js';
@@ -24,6 +24,5 @@ window.onload = () => {
 
     window.engine = new Engine();
     window.tutorial = new TutorialManager();
-    window.missions = new MissionManager(window.engine);
     window.controls = new PremiumControls();
 };

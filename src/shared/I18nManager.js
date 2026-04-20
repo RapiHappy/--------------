@@ -23,6 +23,7 @@ export class I18nManager {
         localStorage.setItem('techphys_theme', theme);
         document.documentElement.setAttribute('data-theme', theme);
         this.applyTheme();
+        window.dispatchEvent(new CustomEvent('techphys_theme_change', { detail: { theme } }));
     }
 
     applyTheme() {

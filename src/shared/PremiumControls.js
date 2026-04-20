@@ -43,12 +43,18 @@ export class PremiumControls {
         const themeSwitch = document.getElementById('global-theme-toggle');
         themeSwitch.onclick = () => {
             const next = i18n.theme === 'dark' ? 'light' : 'dark';
-            i18n.setTheme(next);
-            const icon = themeSwitch.querySelector('.icon');
             icon.innerText = next === 'dark' ? '🌙' : '☀️';
             icon.classList.add('pop-animation');
             setTimeout(() => icon.classList.remove('pop-animation'), 400);
         };
+
+        window.addEventListener('techphys_theme_change', (e) => {
+            const themeSwitch = document.getElementById('global-theme-toggle');
+            if (themeSwitch) {
+                const icon = themeSwitch.querySelector('.icon');
+                if (icon) icon.innerText = e.detail.theme === 'dark' ? '🌙' : '☀️';
+            }
+        });
     }
 
     addStyles() {

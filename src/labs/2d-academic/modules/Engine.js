@@ -4,6 +4,8 @@ import { ThermoLab } from './ThermoLab.js';
 import { OpticsLab } from './OpticsLab.js';
 import { ElectroLab } from './ElectroLab.js';
 import { ChatController } from './ChatController.js';
+import { MissionManager } from './MissionManager.js';
+import { i18n } from '../../../shared/I18nManager.js';
 
 export const translations = {
     ru: {
@@ -151,9 +153,17 @@ export class Engine {
         this.labs.electro = new ElectroLab(this);
         
         this.chat = new ChatController(this);
+        // this.missions = new MissionManager(this); // Handled by main.js or here? 
+        // Let's keep it here but ensure main.js doesn't duplicate it.
         this.missions = new MissionManager(this);
         
         this.setupEventListeners();
+        
+        window.addEventListener('techphys_theme_change', (e) => {
+            const btn = document.getElementById('theme-toggle');
+            if (btn) btn.innerText = e.detail.theme === 'dark' ? '🌙' : '☀️';
+        });
+
         this.updateUI();
         this.loop();
         
@@ -187,10 +197,14 @@ export class Engine {
                     return;
                 }
                 if (el.id === 'lang-toggle') {
-                    currentLang = currentLang === 'ru' ? 'en' : 'ru';
-                    el.innerText = currentLang.toUpperCase();
-                    this.updateLanguage();
-                    this.updateUI();
+                    const next = i18n.lang === 'ru' ? 'en' : 'ru';
+                    i18n.setLanguage(next);
+                    return;
+                }
+
+                if (el.id === 'theme-toggle' || el.closest('#theme-toggle')) {
+                    const next = i18n.theme === 'dark' ? 'light' : 'dark';
+                    i18n.setTheme(next);
                     return;
                 }
 
