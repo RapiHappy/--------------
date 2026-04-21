@@ -4,11 +4,13 @@ export class ChatController {
         this.isOpen = false;
         this.messages = [];
         
-        // Ensure we get the key correctly from Vite's env
-        this.apiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
+        // Load API Keys
+        this.geminiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
+        this.yandexKey = import.meta.env.VITE_YANDEX_API_KEY || '';
+        this.folderId = import.meta.env.VITE_YANDEX_FOLDER_ID || '';
         
-        if (!this.apiKey) {
-            console.warn("TechPhys AI: VITE_GEMINI_API_KEY is missing in .env file.");
+        if (!this.geminiKey && !this.yandexKey) {
+            console.warn("TechPhys AI: No AI keys found in .env file.");
         }
         
         this.setupUI();
@@ -60,9 +62,9 @@ export class ChatController {
 
         const typingId = this.addTypingIndicator();
 
-        if (!this.apiKey) {
+        if (!this.geminiKey && !this.yandexKey) {
             this.removeTypingIndicator(typingId);
-            this.addMessage("Ошибка: API ключ Gemini не найден. Проверьте файл .env и перезагрузите сервер (Vite).", 'bot');
+            this.addMessage("Ошибка: API ключи не найдены. Проверьте файл .env.", 'bot');
             return;
         }
 
@@ -79,35 +81,44 @@ Actions include:
 - SET_GRAVITY, value: Change gravity
 - SHOW_MISSIONS: Generate new AI missions/tasks for the user or refresh current ones.`;
 
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${this.apiKey}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    contents: [{
-                        parts: [{
-                            text: `${systemPrompt}\n\nUser Question: ${text}`
-                        }]
-                    }],
-                    generationConfig: {
-                        temperature: 0.7,
-                        topP: 0.95,
-                        topK: 40,
-                        maxOutputTokens: 1024,
-                    }
-                })
-            });
+            let aiText = "";
 
-            const data = await response.json();
-            this.removeTypingIndicator(typingId);
-
-            if (data.error) {
-                this.addMessage(`AI Error: ${data.error.message}`, 'bot');
-                return;
+            if (this.yandexKey && this.folderId) {
+                // Use Yandex GPT
+                const response = await fetch("https://llm.api.cloud.yandex.net/foundationModels/v1/completion", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Api-Key ${this.yandexKey}`
+                    },
+                    body: JSON.stringify({
+                        modelUri: `gpt://${this.folderId}/yandexgpt-lite/latest`,
+                        completionOptions: { stream: false, temperature: 0.6, maxTokens: "1000" },
+                        messages: [
+                            { role: "system", text: systemPrompt },
+                            { role: "user", text: text }
+                        ]
+                    })
+                });
+                const data = await response.json();
+                if (data.error) throw new Error(data.error.message || "Yandex Error");
+                aiText = data.result.alternatives[0].message.text;
+            } else {
+                // Fallback to Gemini
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${this.geminiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: `${systemPrompt}\n\nUser Question: ${text}` }] }],
+                        generationConfig: { temperature: 0.7, topP: 0.95, topK: 40, maxOutputTokens: 1024 }
+                    })
+                });
+                const data = await response.json();
+                if (data.error) throw new Error(data.error.message || "Gemini Error");
+                aiText = data.candidates[0].content.parts[0].text;
             }
 
-            const aiText = data.candidates[0].content.parts[0].text;
+            this.removeTypingIndicator(typingId);
             this.processAiResponse(aiText);
 
         } catch (err) {
@@ -181,25 +192,42 @@ Return valid JSON ONLY in this format:
 { "missions": [ { "id": "u1", "title": {"ru": "...", "en": "..."}, "desc": {"ru": "...", "en": "..."}, "type": "action_check" } ] }
 Types: action_check (requires user to do something). Titles and desk must be fun and academic.`;
 
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${this.apiKey}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    contents: [{
-                        parts: [{
-                            text: systemPrompt
-                        }]
-                    }],
-                    generationConfig: {
-                        responseMimeType: "application/json",
-                    }
-                })
-            });
-            const data = await response.json();
-            const missionsStr = data.candidates[0].content.parts[0].text;
-            return JSON.parse(missionsStr).missions;
+            let missionsStr = "";
+
+            if (this.yandexKey && this.folderId) {
+                const response = await fetch("https://llm.api.cloud.yandex.net/foundationModels/v1/completion", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Api-Key ${this.yandexKey}`
+                    },
+                    body: JSON.stringify({
+                        modelUri: `gpt://${this.folderId}/yandexgpt-lite/latest`,
+                        completionOptions: { stream: false, temperature: 0.8, maxTokens: "1000" },
+                        messages: [
+                            { role: "system", text: systemPrompt },
+                            { role: "user", text: "Generate missions JSON now." }
+                        ]
+                    })
+                });
+                const data = await response.json();
+                missionsStr = data.result.alternatives[0].message.text;
+            } else {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${this.geminiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: systemPrompt }] }],
+                        generationConfig: { responseMimeType: "application/json" }
+                    })
+                });
+                const data = await response.json();
+                missionsStr = data.candidates[0].content.parts[0].text;
+            }
+
+            // Cleanup potential markdown backticks from Yandex
+            const cleaned = missionsStr.replace(/```json/g, '').replace(/```/g, '').trim();
+            return JSON.parse(cleaned).missions;
         } catch (err) {
             console.error("AI Mission Fetch Error:", err);
             return null;

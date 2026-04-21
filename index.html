@@ -169,6 +169,102 @@
             transform: scale(1.05);
             box-shadow: 0 0 20px rgba(0, 240, 255, 0.4);
         }
+        .hub-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 50px;
+            z-index: 1000;
+            box-sizing: border-box;
+            background: linear-gradient(to bottom, rgba(5, 6, 8, 0.5), transparent);
+            backdrop-filter: blur(5px);
+        }
+        .header-logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(90deg, var(--accent), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .header-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        #lang-toggle, #theme-toggle {
+            background: var(--glass);
+            border: 1px solid var(--border);
+            color: white;
+            padding: 10px 16px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 0.85rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 44px;
+            height: 44px;
+        }
+        #lang-toggle:hover, #theme-toggle:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 240, 255, 0.2);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        /* LIGHT THEME SUPPORT */
+        body.light-theme {
+            --bg: #f8fafc;
+            --glass: rgba(255, 255, 255, 0.7);
+            --border: rgba(0, 0, 0, 0.1);
+            color: #1e293b;
+        }
+        body.light-theme .hero {
+            background: radial-gradient(circle at center, #ffffff 0%, #f1f5f9 100%);
+        }
+        body.light-theme .logo {
+            filter: drop-shadow(0 0 10px rgba(0, 0, 0, 0.1));
+        }
+        body.light-theme .tagline {
+            color: #475569;
+            opacity: 0.9;
+        }
+        body.light-theme #lang-toggle, body.light-theme #theme-toggle {
+            color: #1e293b;
+        }
+        body.light-theme .hub-card {
+            background: rgba(255, 255, 255, 0.8);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+        }
+        body.light-theme .hub-card p {
+            color: #64748b;
+        }
+        body.light-theme .btn {
+            background: rgba(0, 0, 0, 0.05);
+            color: #1e293b;
+        }
+        body.light-theme .hub-header {
+            background: linear-gradient(to bottom, rgba(255, 255, 255, 0.8), transparent);
+        }
+
+        .pop-animation {
+            animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+            100% { transform: scale(1); }
+        }
+
         .btn {
             margin-top: auto;
             padding: 0.8rem;
@@ -196,6 +292,17 @@
             </div>
         </div>
     </div>
+
+    <!-- FLOATING HEADER -->
+    <header class="hub-header">
+        <div class="logo-section">
+            <div class="header-logo">TechPhys <span style="opacity: 0.5">Ultimate</span></div>
+        </div>
+        <div class="header-actions">
+            <button id="lang-toggle" title="Switch Language (RU/EN)">RU</button>
+            <button id="theme-toggle" title="Toggle Theme (Dark/Light)">🌙</button>
+        </div>
+    </header>
 
     <section class="hero">
         <h1 class="logo">TECHPHYS <span style="background: white; -webkit-background-clip: text; -webkit-text-fill-color: transparent; opacity: 0.2">ULTIMATE</span></h1>
