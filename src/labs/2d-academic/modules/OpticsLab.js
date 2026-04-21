@@ -88,6 +88,14 @@ export class OpticsLab {
                 for (let k = 1; k < pts.length; k++) this.ctx.lineTo(pts[k].x, pts[k].y);
                 if (o.type === 'prism') this.ctx.closePath();
                 this.ctx.stroke();
+
+                // Draw angle label if selected or always for clarity
+                if (isSelected && o.angle !== undefined) {
+                    const deg = Math.round(o.angle * (180 / Math.PI));
+                    this.ctx.fillStyle = '#00f0ff';
+                    this.ctx.font = 'bold 14px Inter, sans-serif';
+                    this.ctx.fillText(`${deg}°`, o.pos.x + 20, o.pos.y - 20);
+                }
             }
             this.ctx.shadowBlur = 0;
         });
@@ -191,6 +199,10 @@ export class OpticsLab {
     }
 
     getDataForLog() {
+        if (this.engine.selection && this.engine.selection.angle !== undefined) {
+            const deg = Math.round(this.engine.selection.angle * (180 / Math.PI));
+            return { val1: deg, val2: 0, value: deg };
+        }
         return { val1: 0, val2: 0, value: 0 };
     }
 }

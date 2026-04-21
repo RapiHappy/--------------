@@ -343,13 +343,22 @@ export class Engine {
                 if (label) label.innerText = `${this.timeScale.toFixed(1)}x`;
             }
             if (el.id === 'obj-rotate' && this.selection) {
-                this.selection.angle = parseFloat(el.value) * (Math.PI / 180);
+                const val = parseFloat(el.value);
+                this.selection.angle = val * (Math.PI / 180);
+                const b = el.parentElement.querySelector('b');
+                if (b) b.innerText = `${val}°`;
             }
             if (el.id === 'obj-stiffness' && this.selection) {
-                this.selection.k = parseFloat(el.value);
+                const val = parseFloat(el.value);
+                this.selection.k = val;
+                const b = el.parentElement.querySelector('b');
+                if (b) b.innerText = val;
             }
             if (el.id === 'obj-mass' && this.selection) {
-                this.selection.m = parseFloat(el.value);
+                const val = parseFloat(el.value);
+                this.selection.m = val;
+                const b = el.parentElement.querySelector('b');
+                if (b) b.innerText = val;
             }
             if (el.id === 'scenario-select') {
                 this.loadScenario(el.value);
@@ -556,6 +565,14 @@ export class Engine {
         const max = Math.max(...validPoints);
         const min = Math.min(...validPoints);
         const range = (max - min) || 1;
+
+        // Draw axis labels
+        ctx.fillStyle = this.themeCache.objColor;
+        ctx.font = '10px Inter, sans-serif';
+        ctx.globalAlpha = 0.6;
+        ctx.fillText(max.toFixed(2), 5, 15);
+        ctx.fillText(min.toFixed(2), 5, canvas.height - 5);
+        ctx.globalAlpha = 1.0;
 
         validPoints.forEach((p, i) => {
             const x = (i / (validPoints.length - 1)) * canvas.width;
