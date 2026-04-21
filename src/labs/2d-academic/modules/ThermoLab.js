@@ -29,8 +29,10 @@ export class ThermoLab {
     draw() {
         const w = this.engine.canvas.width * this.vol;
         const x0 = (this.engine.canvas.width - w) / 2;
-        this.ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+        this.ctx.strokeStyle = this.engine.themeCache.objColor;
+        this.ctx.globalAlpha = 0.2;
         this.ctx.strokeRect(x0, 50, w, this.engine.canvas.height - 100);
+        this.ctx.globalAlpha = 1.0;
         this.particles.forEach(p => {
             const isSelected = p === this.engine.selection;
             if (isSelected) {

@@ -13,13 +13,41 @@ export class MechanicsLab {
         if (!dt) return;
         this.time += dt;
         this.objects.forEach(o => {
+            const isDragged = this.engine.isDragging && this.engine.selection === o;
+            if (isDragged) {
+                o.vel = new Vec2(0, 0); // Reset velocity while dragging
+                return;
+            }
+
             if (o.type === 'ball') {
+                // Physics
                 o.vel.y += this.gravity * 20 * dt;
+                o.vel.x *= Math.pow(0.995, dt * 60); // Horizontal damping
                 o.pos = o.pos.add(o.vel.mult(dt));
-                if (o.pos.y > this.engine.canvas.height - 20) {
-                    o.pos.y = this.engine.canvas.height - 20;
+
+                const radius = 20;
+                // Bottom
+                if (o.pos.y > this.engine.canvas.height - radius) {
+                    o.pos.y = this.engine.canvas.height - radius;
+                    o.vel.y *= -0.7;
+                    o.vel.x *= 0.95; // Friction on ground
+                }
+                // Top
+                if (o.pos.y < radius) {
+                    o.pos.y = radius;
                     o.vel.y *= -0.7;
                 }
+                // Right
+                if (o.pos.x > this.engine.canvas.width - radius) {
+                    o.pos.x = this.engine.canvas.width - radius;
+                    o.vel.x *= -0.7;
+                }
+                // Left
+                if (o.pos.x < radius) {
+                    o.pos.x = radius;
+                    o.vel.x *= -0.7;
+                }
+
             } else if (o.type === 'pendulum') {
                 const L = o.length || 200;
                 const pivot = o.pivot || new Vec2(this.engine.canvas.width / 2, 50);
@@ -46,8 +74,13 @@ export class MechanicsLab {
                 o.vel.y *= Math.pow(0.98, dt * 60);
                 o.pos.y += o.vel.y * dt * 60;
 
-                if (o.pos.y > this.engine.canvas.height - 20) {
-                    o.pos.y = this.engine.canvas.height - 20;
+                const radius = 20;
+                if (o.pos.y > this.engine.canvas.height - radius) {
+                    o.pos.y = this.engine.canvas.height - radius;
+                    o.vel.y *= -0.5;
+                }
+                if (o.pos.y < radius) {
+                    o.pos.y = radius;
                     o.vel.y *= -0.5;
                 }
             }
@@ -67,6 +100,21 @@ export class MechanicsLab {
                 this.ctx.shadowColor = '#00f0ff';
                 this.ctx.strokeStyle = '#00f0ff';
                 this.ctx.lineWidth = 3;
+            }
+
+            // Draw Velocity Vectors for Balls
+            if (o.type === 'ball') {
+                this.drawVector(o.pos, o.vel, '#00f0ff', 'v');
+                
+                // Optional: Draw component axes if moving fast enough
+                if (o.vel.mag() > 10) {
+                    this.ctx.save();
+                    this.ctx.setLineDash([2, 4]);
+                    this.ctx.globalAlpha = 0.5;
+                    this.drawVector(o.pos, new Vec2(o.vel.x, 0), '#ff4757', 'vx');
+                    this.drawVector(o.pos, new Vec2(0, o.vel.y), '#2ed573', 'vy');
+                    this.ctx.restore();
+                }
             }
 
             if (o.type === 'pendulum') {
@@ -93,15 +141,59 @@ export class MechanicsLab {
                 this.ctx.stroke();
             }
 
-            this.ctx.fillStyle = isSelected ? '#00f0ff' : '#ffffff';
+            this.ctx.fillStyle = isSelected ? this.engine.themeCache.accent : '#ffffff';
             this.ctx.beginPath();
-            this.ctx.arc(o.pos.x, o.pos.y, 20, 0, 7);
+            this.ctx.arc(o.pos.x, o.pos.y, 20, 0, Math.PI * 2);
             this.ctx.fill();
+            
             if (isSelected) {
                 this.ctx.stroke();
                 this.ctx.restore();
             }
         });
+
+        // Draw Ground Line
+        this.ctx.strokeStyle = objColor;
+        this.ctx.lineWidth = 2;
+        this.ctx.globalAlpha = 0.3;
+        this.ctx.beginPath();
+        this.ctx.moveTo(0, this.engine.canvas.height - 20);
+        this.ctx.lineTo(this.engine.canvas.width, this.engine.canvas.height - 20);
+        this.ctx.stroke();
+        this.ctx.globalAlpha = 1.0;
+    }
+
+    drawVector(pos, vel, color, label) {
+        const mag = vel.mag();
+        if (mag < 5) return;
+
+        const scale = 0.5;
+        const end = pos.add(vel.mult(scale));
+
+        this.ctx.save();
+        this.ctx.strokeStyle = color;
+        this.ctx.fillStyle = color;
+        this.ctx.lineWidth = 2;
+        
+        // Line
+        this.ctx.beginPath();
+        this.ctx.moveTo(pos.x, pos.y);
+        this.ctx.lineTo(end.x, end.y);
+        this.ctx.stroke();
+
+        // Arrow head
+        const angle = Math.atan2(vel.y, vel.x);
+        this.ctx.beginPath();
+        this.ctx.moveTo(end.x, end.y);
+        this.ctx.lineTo(end.x - 8 * Math.cos(angle - Math.PI/6), end.y - 8 * Math.sin(angle - Math.PI/6));
+        this.ctx.lineTo(end.x - 8 * Math.cos(angle + Math.PI/6), end.y - 8 * Math.sin(angle + Math.PI/6));
+        this.ctx.closePath();
+        this.ctx.fill();
+
+        // Label
+        this.ctx.font = '10px Inter, sans-serif';
+        this.ctx.fillText(label, end.x + 5, end.y + 5);
+        this.ctx.restore();
     }
 
     getAtPos(pos) {

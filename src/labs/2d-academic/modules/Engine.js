@@ -245,11 +245,11 @@ export class Engine {
 
     updateThemeCache() {
         const style = getComputedStyle(document.documentElement);
-        this.themeCache.canvasBg = style.getPropertyValue('--canvas-bg').trim() || '#0a0b10';
-        this.themeCache.objColor = style.getPropertyValue('--obj-color').trim() || '#ffffff';
-        this.themeCache.accent = style.getPropertyValue('--accent').trim() || '#00f0ff';
+        this.themeCache.canvasBg = style.getPropertyValue('--canvas-bg').trim() || (i18n.theme === 'dark' ? '#07080c' : '#ffffff');
+        this.themeCache.objColor = style.getPropertyValue('--obj-color').trim() || (i18n.theme === 'dark' ? '#ffffff' : '#1e293b');
+        this.themeCache.accent = style.getPropertyValue('--accent').trim() || '#3b82f6';
         
-        // Update Chart font color if needed
+        // Ensure chart and other elements update their colors
     }
 
     resize() {
@@ -417,7 +417,20 @@ export class Engine {
             this.rulerEnd = pos;
         } else if (this.isDragging && this.selection) {
             if (this.selection.pos) {
-                this.selection.pos = new Vec2(pos.x, pos.y);
+                // Constrain to canvas
+                const radius = 20;
+                const maxX = this.canvas.width - radius;
+                const maxY = this.canvas.height - radius;
+                
+                this.selection.pos = new Vec2(
+                    Math.max(radius, Math.min(pos.x, maxX)),
+                    Math.max(radius, Math.min(pos.y, maxY))
+                );
+
+                // Ensure velocity is zeroed during drag
+                if (this.selection.vel) {
+                    this.selection.vel = new Vec2(0, 0);
+                }
             }
         }
     }
@@ -675,7 +688,9 @@ export class Engine {
     }
 
     drawGrid() {
-        this.ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+        // Use objColor with low opacity for the grid
+        this.ctx.strokeStyle = this.themeCache.objColor;
+        this.ctx.globalAlpha = 0.08;
         this.ctx.lineWidth = 1;
         const step = 50;
         for(let x=0; x<this.canvas.width; x+=step) {
@@ -684,10 +699,11 @@ export class Engine {
         for(let y=0; y<this.canvas.height; y+=step) {
             this.ctx.beginPath(); this.ctx.moveTo(0,y); this.ctx.lineTo(this.canvas.width, y); this.ctx.stroke();
         }
+        this.ctx.globalAlpha = 1.0;
     }
 
     drawRuler() {
-        this.ctx.strokeStyle = '#00f0ff';
+        this.ctx.strokeStyle = this.themeCache.accent;
         this.ctx.setLineDash([5, 5]);
         this.ctx.beginPath();
         this.ctx.moveTo(this.rulerStart.x, this.rulerStart.y);
@@ -700,6 +716,9 @@ export class Engine {
         if (display) {
             display.style.left = this.rulerEnd.x + 10 + 'px';
             display.style.top = this.rulerEnd.y + 10 + 'px';
+            display.style.color = this.themeCache.objColor; // Ensure text visibility
+            display.style.background = this.themeCache.canvasBg;
+            display.style.border = `1px solid ${this.themeCache.accent}`;
             display.innerText = `${d.toFixed(0)} px`;
         }
     }
