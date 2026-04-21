@@ -62,11 +62,17 @@ export class MechanicsLab {
                 // Gravity
                 o.vel.y += this.gravity * 20 * dt;
                 
-                // Horizontal damping (air resistance)
-                o.vel = o.vel.mult(Math.pow(0.99, dt * 60));
+                // Mass-dependent Air Resistance (Damping)
+                // Heavier balls are less affected by air drag
+                const dragConst = 0.5; // Adjustable drag factor
+                const dampingBase = 1 - (dragConst / (o.m || 10)) * dt;
+                o.vel = o.vel.mult(Math.max(0, dampingBase));
 
                 // Position update
                 o.pos = o.pos.add(o.vel.mult(dt));
+
+                // Visual Rotation based on horizontal velocity
+                o.angle = (o.angle || 0) + (o.vel.x / (o.radius || 20)) * dt;
 
                 const radius = o.m ? (10 + Math.sqrt(o.m) * 3) : (o.radius || 20);
 
@@ -109,9 +115,19 @@ export class MechanicsLab {
                         const overlap = radius - dist;
                         o.pos = o.pos.add(normal.mult(overlap));
 
-                        // Reflect velocity
+                        // REALISTIC SLOPE PHYSICS: Gravity projection
+                        // Gravity pulls object ALONG the slope surface
+                        const slopeDir = new Vec2(normal.y, -normal.x); // Tangent to slope
+                        const gravityMag = this.gravity * 20;
+                        const gravityVec = new Vec2(0, gravityMag);
+                        const gravAlongSlope = gravityVec.dot(slopeDir);
+                        
+                        // Apply acceleration along slope
+                        o.vel = o.vel.add(slopeDir.mult(gravAlongSlope * dt));
+
+                        // Reflect velocity (Bounce)
                         if (o.vel.dot(normal) < 0) {
-                            const bounce = 0.4;
+                            const bounce = 0.3;
                             o.vel = o.vel.reflect(normal).mult(bounce);
                         }
                         
@@ -170,6 +186,14 @@ export class MechanicsLab {
                 this.ctx.beginPath();
                 this.ctx.arc(o.pos.x, o.pos.y, radius, 0, Math.PI * 2);
                 this.ctx.fill();
+
+                // Draw a rotation line (visual rolling effect)
+                this.ctx.strokeStyle = this.engine.theme === 'dark' ? 'rgba(0,0,0,0.3)' : 'rgba(255,255,255,0.3)';
+                this.ctx.lineWidth = 2;
+                this.ctx.beginPath();
+                this.ctx.moveTo(o.pos.x, o.pos.y);
+                this.ctx.lineTo(o.pos.x + Math.cos(o.angle || 0) * radius, o.pos.y + Math.sin(o.angle || 0) * radius);
+                this.ctx.stroke();
                 
                 if (isSelected) {
                     this.ctx.strokeStyle = '#00f0ff';
@@ -266,6 +290,15 @@ export class MechanicsLab {
                 this.ctx.arc(posA.x, posA.y, 4, 0, Math.PI * 2);
                 this.ctx.arc(posB.x, posB.y, 4, 0, Math.PI * 2);
                 this.ctx.fill();
+
+                if (isSelected) {
+                    this.ctx.strokeStyle = accent;
+                    this.ctx.lineWidth = 1;
+                    this.ctx.beginPath();
+                    this.ctx.arc(posA.x, posA.y, 10, 0, Math.PI * 2);
+                    this.ctx.arc(posB.x, posB.y, 10, 0, Math.PI * 2);
+                    this.ctx.stroke();
+                }
             }
 
             if (isSelected) {
@@ -337,11 +370,51 @@ export class MechanicsLab {
                 const posA = o.objA ? o.objA.pos : o.posA;
                 const posB = o.objB ? o.objB.pos : o.posB;
                 if (!posA || !posB) return false;
+                
+                if (pos.dist(posA) < 20) return { obj: o, part: 'endA' };
+                if (pos.dist(posB) < 20) return { obj: o, part: 'endB' };
+                
                 const mid = posA.add(posB).mult(0.5);
                 return pos.dist(mid) < 25;
             }
             return false;
         });
+    }
+
+    handleDrag(obj, part, pos) {
+        if (obj.type === 'spring') {
+            if (part === 'endA') {
+                obj.objA = null; // Detach
+                obj.posA = pos;
+            } else if (part === 'endB') {
+                obj.objB = null; // Detach
+                obj.posB = pos;
+            } else {
+                // Move whole spring if dragged by center
+                // Not strictly needed but could be added
+            }
+        } else if (obj.pos) {
+            obj.pos = pos;
+            if (obj.vel) obj.vel = new Vec2(0,0);
+        }
+    }
+
+    onMouseUp(obj, part, pos) {
+        if (obj.type === 'spring' && (part === 'endA' || part === 'endB')) {
+            // Try to attach to nearest ball or pillar
+            const targets = this.objects.filter(o => (o.type === 'ball' || o.type === 'pillar') && o !== obj);
+            const nearest = targets.find(t => t.pos.dist(pos) < 30);
+            
+            if (nearest) {
+                if (part === 'endA') {
+                    obj.objA = nearest;
+                    obj.posA = null;
+                } else {
+                    obj.objB = nearest;
+                    obj.posB = null;
+                }
+            }
+        }
     }
 
     getHTML() {

@@ -192,6 +192,7 @@ export class Engine {
         this.rulerEnd = null;
         this.chartPoints = [];
         this.selection = null;
+        this.selectionPart = null;
         this.isDragging = false;
         
         this.isPaused = false;
@@ -422,10 +423,18 @@ export class Engine {
 
         const found = lab.getAtPos ? lab.getAtPos(pos) : null;
         if (found) {
-            this.selection = found;
+            // Support for complex objects that return { obj, part }
+            if (found.obj && found.part) {
+                this.selection = found.obj;
+                this.selectionPart = found.part;
+            } else {
+                this.selection = found;
+                this.selectionPart = null;
+            }
             this.isDragging = true;
         } else {
             this.selection = null;
+            this.selectionPart = null;
         }
         this.updateInspector();
     }
@@ -435,8 +444,11 @@ export class Engine {
         if (this.rulerMode && this.rulerStart) {
             this.rulerEnd = pos;
         } else if (this.isDragging && this.selection) {
-            if (this.selection.pos) {
-                // Constrain to canvas
+            const lab = this.labs[this.activeLab];
+            if (lab && lab.handleDrag) {
+                lab.handleDrag(this.selection, this.selectionPart, pos);
+            } else if (this.selection.pos) {
+                // Default drag logic
                 const radius = 20;
                 const maxX = this.canvas.width - radius;
                 const maxY = this.canvas.height - radius;
@@ -454,8 +466,16 @@ export class Engine {
         }
     }
 
-    handleMouseUp() {
+    handleMouseUp(e) {
+        if (this.isDragging && this.selection) {
+            const lab = this.labs[this.activeLab];
+            const pos = new Vec2(e.offsetX, e.offsetY);
+            if (lab && lab.onMouseUp) {
+                lab.onMouseUp(this.selection, this.selectionPart, pos);
+            }
+        }
         this.isDragging = false;
+        this.selectionPart = null;
     }
 
     updateLanguage() {

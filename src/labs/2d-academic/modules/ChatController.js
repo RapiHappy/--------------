@@ -92,8 +92,9 @@ Actions include:
             let aiText = "";
 
             if (this.yandexKey && this.folderId) {
-                // Use Proxy for Yandex GPT
-                const response = await fetch("/yandex-api/foundationModels/v1/completion", {
+                // Use Proxy/Direct for Yandex GPT
+                const yandexUrl = import.meta.env.PROD ? "https://llm.api.cloud.yandex.net" : "/yandex-api";
+                const response = await fetch(`${yandexUrl}/foundationModels/v1/completion`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -108,12 +109,18 @@ Actions include:
                         ]
                     })
                 });
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error(`AI: Yandex API responded with ${response.status}: ${errorText}`);
+                    throw new Error(`Yandex API Error (${response.status})`);
+                }
                 const data = await response.json();
                 if (data.error) throw new Error(data.error.message || "Yandex Error");
                 aiText = data.result.alternatives[0].message.text;
             } else if (this.geminiKey) {
-                // Use Proxy for Gemini
-                const response = await fetch(`/gemini-api/v1beta/models/gemini-1.5-flash:generateContent?key=${this.geminiKey}`, {
+                // Use Proxy/Direct for Gemini
+                const geminiUrl = import.meta.env.PROD ? "https://generativelanguage.googleapis.com" : "/gemini-api";
+                const response = await fetch(`${geminiUrl}/v1beta/models/gemini-1.5-flash:generateContent?key=${this.geminiKey}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -121,6 +128,11 @@ Actions include:
                         generationConfig: { temperature: 0.7, topP: 0.95, topK: 40, maxOutputTokens: 1024 }
                     })
                 });
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error(`AI: Gemini API responded with ${response.status}: ${errorText}`);
+                    throw new Error(`Gemini API Error (${response.status})`);
+                }
                 const data = await response.json();
                 if (data.error) throw new Error(data.error.message || "Gemini Error");
                 aiText = data.candidates[0].content.parts[0].text;
@@ -212,8 +224,9 @@ Ensure the mission description matches the technical checkCondition.`;
             let missionsStr = "";
 
             if (this.yandexKey && this.folderId) {
-                console.log("Fetching missions via Proxy to Yandex GPT...");
-                const response = await fetch("/yandex-api/foundationModels/v1/completion", {
+                const yandexUrl = import.meta.env.PROD ? "https://llm.api.cloud.yandex.net" : "/yandex-api";
+                console.log(`AI: Fetching missions via ${import.meta.env.PROD ? 'Direct' : 'Proxy'} to Yandex GPT...`);
+                const response = await fetch(`${yandexUrl}/foundationModels/v1/completion`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -228,14 +241,22 @@ Ensure the mission description matches the technical checkCondition.`;
                         ]
                     })
                 });
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error(`AI Mission Error: Yandex responded with ${response.status}: ${errorText}`);
+                    throw new Error(`Yandex API Error (${response.status})`);
+                }
+
                 const data = await response.json();
                 if (!data.result || !data.result.alternatives) {
                     throw new Error("Yandex GPT returned invalid data: " + JSON.stringify(data));
                 }
                 missionsStr = data.result.alternatives[0].message.text;
             } else if (this.geminiKey) {
-                console.log("Fetching missions via Proxy to Gemini...");
-                const response = await fetch(`/gemini-api/v1beta/models/gemini-1.5-flash:generateContent?key=${this.geminiKey}`, {
+                const geminiUrl = import.meta.env.PROD ? "https://generativelanguage.googleapis.com" : "/gemini-api";
+                console.log(`AI: Fetching missions via ${import.meta.env.PROD ? 'Direct' : 'Proxy'} to Gemini...`);
+                const response = await fetch(`${geminiUrl}/v1beta/models/gemini-1.5-flash:generateContent?key=${this.geminiKey}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -243,6 +264,13 @@ Ensure the mission description matches the technical checkCondition.`;
                         generationConfig: { responseMimeType: "application/json" }
                     })
                 });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error(`AI Mission Error: Gemini responded with ${response.status}: ${errorText}`);
+                    throw new Error(`Gemini API Error (${response.status})`);
+                }
+
                 const data = await response.json();
                 if (!data.candidates) throw new Error("Invalid Gemini Response: " + JSON.stringify(data));
                 missionsStr = data.candidates[0].content.parts[0].text;
