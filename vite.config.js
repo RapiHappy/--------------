@@ -17,6 +17,18 @@ export default defineConfig({
   },
   server: {
     port: 3000,
-    open: true
+    open: true,
+    proxy: {
+      '/yandex-api': {
+        target: 'https://llm.api.cloud.yandex.net',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/yandex-api/, '')
+      },
+      '/gemini-api': {
+        target: 'https://generativelanguage.googleapis.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/gemini-api/, '')
+      }
+    }
   }
 });

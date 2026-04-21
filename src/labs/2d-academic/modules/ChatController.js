@@ -92,8 +92,8 @@ Actions include:
             let aiText = "";
 
             if (this.yandexKey && this.folderId) {
-                // Use Yandex GPT
-                const response = await fetch("https://llm.api.cloud.yandex.net/foundationModels/v1/completion", {
+                // Use Proxy for Yandex GPT
+                const response = await fetch("/yandex-api/foundationModels/v1/completion", {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -111,9 +111,9 @@ Actions include:
                 const data = await response.json();
                 if (data.error) throw new Error(data.error.message || "Yandex Error");
                 aiText = data.result.alternatives[0].message.text;
-            } else {
-                // Fallback to Gemini
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${this.geminiKey}`, {
+            } else if (this.geminiKey) {
+                // Use Proxy for Gemini
+                const response = await fetch(`/gemini-api/v1beta/models/gemini-1.5-flash:generateContent?key=${this.geminiKey}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -203,8 +203,8 @@ Types: action_check (requires user to do something). Titles and desk must be fun
             let missionsStr = "";
 
             if (this.yandexKey && this.folderId) {
-                console.log("Fetching missions from Yandex GPT...");
-                const response = await fetch("https://llm.api.cloud.yandex.net/foundationModels/v1/completion", {
+                console.log("Fetching missions via Proxy to Yandex GPT...");
+                const response = await fetch("/yandex-api/foundationModels/v1/completion", {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -224,9 +224,9 @@ Types: action_check (requires user to do something). Titles and desk must be fun
                     throw new Error("Yandex GPT returned invalid data: " + JSON.stringify(data));
                 }
                 missionsStr = data.result.alternatives[0].message.text;
-            } else {
-                console.log("Fetching missions from Gemini...");
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${this.geminiKey}`, {
+            } else if (this.geminiKey) {
+                console.log("Fetching missions via Proxy to Gemini...");
+                const response = await fetch(`/gemini-api/v1beta/models/gemini-1.5-flash:generateContent?key=${this.geminiKey}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
