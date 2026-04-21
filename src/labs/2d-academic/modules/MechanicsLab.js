@@ -469,9 +469,37 @@ export class MechanicsLab {
         }
     }
 
+    getChartOptions() {
+        return [
+            { id: 'speed', label: 'chart_speed' },
+            { id: 'height', label: 'chart_height' },
+            { id: 'energy', label: 'chart_energy' }
+        ];
+    }
+
     getDataForLog() {
-        const v = this.objects.length ? Math.abs(this.objects[0].vel?.y || 0) : 0;
-        return { val1: v, val2: this.gravity, value: v };
+        const selection = this.engine.selection;
+        const obj = (selection && selection.type === 'ball') ? selection : this.objects.find(o => o.type === 'ball');
+        
+        if (!obj) return { speed: 0, height: 0, energy: { kinetic: 0, potential: 0, total: 0 } };
+
+        const speed = obj.vel ? obj.vel.mag() / 20 : 0; // scaled for UI
+        const height = (this.engine.canvas.height - 20 - obj.pos.y) / 20; // scaled
+        const mass = obj.m || 10;
+        
+        const kinetic = 0.5 * mass * (speed * speed);
+        const potential = mass * (this.gravity / 10) * height; // Simplified scaling
+        const total = kinetic + potential;
+
+        return {
+            speed: speed,
+            height: height,
+            energy: {
+                kinetic: kinetic,
+                potential: potential,
+                total: total
+            }
+        };
     }
 
     getSnapshot() {

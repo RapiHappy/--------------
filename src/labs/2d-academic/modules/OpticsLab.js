@@ -198,12 +198,18 @@ export class OpticsLab {
         }
     }
 
+    getChartOptions() {
+        return [
+            { id: 'angle', label: 'angle' }
+        ];
+    }
+
     getDataForLog() {
         if (this.engine.selection && this.engine.selection.angle !== undefined) {
             const deg = Math.round(this.engine.selection.angle * (180 / Math.PI));
-            return { val1: deg, val2: 0, value: deg };
+            return { angle: deg };
         }
-        return { val1: 0, val2: 0, value: 0 };
+        return { angle: 0 };
     }
 
     getSnapshot() {

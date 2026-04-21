@@ -16,8 +16,8 @@ export class ChatController {
             this.folderId = '';
         }
         
-        if (!this.geminiKey && !this.yandexKey) {
-            console.warn("TechPhys AI: No API keys found. AI features will be disabled.");
+        if (!this.yandexKey || !this.folderId) {
+            console.warn("TechPhys AI: Yandex API key or Folder ID missing. AI features will be limited.");
         }
         
         this.setupUI();
@@ -70,12 +70,6 @@ export class ChatController {
 
         const typingId = this.addTypingIndicator();
 
-        if (!this.geminiKey && !this.yandexKey) {
-            this.removeTypingIndicator(typingId);
-            this.addMessage("Ошибка: API ключи не найдены. Проверьте файл .env.", 'bot');
-            return;
-        }
-
         try {
             const systemPrompt = `You are TechPhys AI, a brilliant and helpful physics assistant. Answer questions concisely and scientifically. Use markdown for formulas. 
 Current Laboratory: ${this.engine.activeLab}.
@@ -89,61 +83,46 @@ Actions include:
 - SET_GRAVITY, value: Change gravity
 - SHOW_MISSIONS: Generate new AI missions/tasks for the user or refresh current ones.`;
 
-            let aiText = "";
-
-            if (this.yandexKey && this.folderId) {
-                // Use Proxy/Direct for Yandex GPT
-                const yandexUrl = import.meta.env.PROD ? "https://llm.api.cloud.yandex.net" : "/yandex-api";
-                const response = await fetch(`${yandexUrl}/foundationModels/v1/completion`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Api-Key ${this.yandexKey}`
-                    },
-                    body: JSON.stringify({
-                        modelUri: `gpt://${this.folderId}/yandexgpt-lite/latest`,
-                        completionOptions: { stream: false, temperature: 0.6, maxTokens: "1000" },
-                        messages: [
-                            { role: "system", text: systemPrompt },
-                            { role: "user", text: text }
-                        ]
-                    })
-                });
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    console.error(`AI: Yandex API responded with ${response.status}: ${errorText}`);
-                    throw new Error(`Yandex API Error (${response.status})`);
-                }
-                const data = await response.json();
-                if (data.error) throw new Error(data.error.message || "Yandex Error");
-                aiText = data.result.alternatives[0].message.text;
-            } else if (this.geminiKey) {
-                // Use Proxy/Direct for Gemini
-                const geminiUrl = import.meta.env.PROD ? "https://generativelanguage.googleapis.com" : "/gemini-api";
-                const response = await fetch(`${geminiUrl}/v1beta/models/gemini-1.5-flash:generateContent?key=${this.geminiKey}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{ parts: [{ text: `${systemPrompt}\n\nUser Question: ${text}` }] }],
-                        generationConfig: { temperature: 0.7, topP: 0.95, topK: 40, maxOutputTokens: 1024 }
-                    })
-                });
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    console.error(`AI: Gemini API responded with ${response.status}: ${errorText}`);
-                    throw new Error(`Gemini API Error (${response.status})`);
-                }
-                const data = await response.json();
-                if (data.error) throw new Error(data.error.message || "Gemini Error");
-                aiText = data.candidates[0].content.parts[0].text;
+            if (!this.yandexKey || !this.folderId) {
+                this.removeTypingIndicator(typingId);
+                this.addMessage("Ошибка: API ключи Yandex не найдены в .env.", 'bot');
+                return;
             }
+
+            const yandexUrl = import.meta.env.PROD ? "https://llm.api.cloud.yandex.net" : "/yandex-api";
+            const response = await fetch(`${yandexUrl}/foundationModels/v1/completion`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Api-Key ${this.yandexKey}`
+                },
+                body: JSON.stringify({
+                    modelUri: `gpt://${this.folderId}/yandexgpt-lite/latest`,
+                    completionOptions: { stream: false, temperature: 0.6, maxTokens: "1000" },
+                    messages: [
+                        { role: "system", text: systemPrompt },
+                        { role: "user", text: text }
+                    ]
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                if (response.status === 403) {
+                    throw new Error(`Permission Denied (403). Check your Folder ID: ${this.folderId}`);
+                }
+                throw new Error(errorData.error.message || `API Error ${response.status}`);
+            }
+
+            const data = await response.json();
+            const aiText = data.result.alternatives[0].message.text;
 
             this.removeTypingIndicator(typingId);
             this.processAiResponse(aiText);
 
         } catch (err) {
             this.removeTypingIndicator(typingId);
-            this.addMessage("Connection error. Please try again.", 'bot');
+            this.addMessage(`AI Error: ${err.message}`, 'bot');
             console.error(err);
         }
     }
@@ -243,37 +222,20 @@ Ensure the mission description matches the technical checkCondition.`;
                 });
                 
                 if (!response.ok) {
-                    const errorText = await response.text();
-                    console.error(`AI Mission Error: Yandex responded with ${response.status}: ${errorText}`);
+                    const errorData = await response.json();
+                    if (response.status === 403) {
+                        console.error(`AI Mission Permission Denied: Check Folder ID ${this.folderId}`);
+                    }
                     throw new Error(`Yandex API Error (${response.status})`);
                 }
 
                 const data = await response.json();
                 if (!data.result || !data.result.alternatives) {
-                    throw new Error("Yandex GPT returned invalid data: " + JSON.stringify(data));
+                    throw new Error("Yandex GPT returned invalid data");
                 }
                 missionsStr = data.result.alternatives[0].message.text;
-            } else if (this.geminiKey) {
-                const geminiUrl = import.meta.env.PROD ? "https://generativelanguage.googleapis.com" : "/gemini-api";
-                console.log(`AI: Fetching missions via ${import.meta.env.PROD ? 'Direct' : 'Proxy'} to Gemini...`);
-                const response = await fetch(`${geminiUrl}/v1beta/models/gemini-1.5-flash:generateContent?key=${this.geminiKey}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{ parts: [{ text: systemPrompt }] }],
-                        generationConfig: { responseMimeType: "application/json" }
-                    })
-                });
-
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    console.error(`AI Mission Error: Gemini responded with ${response.status}: ${errorText}`);
-                    throw new Error(`Gemini API Error (${response.status})`);
-                }
-
-                const data = await response.json();
-                if (!data.candidates) throw new Error("Invalid Gemini Response: " + JSON.stringify(data));
-                missionsStr = data.candidates[0].content.parts[0].text;
+            } else {
+                throw new Error("Yandex API Keys not configured.");
             }
 
             // Robust JSON Extraction: Find the first '{' and last '}'

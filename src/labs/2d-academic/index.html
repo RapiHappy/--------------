@@ -134,9 +134,13 @@
                     <!-- Real-time Chart -->
                     <div class="sidebar-section">
                         <div class="section-header">
-                            <span class="icon">📈</span> <span data-i18n="chart_title">ГРАФИК В РЕАЛЬНОМ ВРЕМЕНИ</span>
+                            <span class="icon">📈</span> <span data-i18n="chart_title">ГРАФИК</span>
+                            <div class="header-actions-small">
+                                <select class="mini-select" id="chart-data-select" title="Выбрать тип данных для графика"></select>
+                                <button id="clear-chart-btn" title="Очистить историю графика">🧹</button>
+                            </div>
                         </div>
-                        <div class="chart-container">
+                        <div class="chart-container" id="chart-parent">
                             <canvas id="chartCanvas"></canvas>
                         </div>
                     </div>

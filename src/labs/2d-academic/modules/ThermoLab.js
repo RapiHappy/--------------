@@ -105,8 +105,22 @@ export class ThermoLab {
         }
     }
 
+    getChartOptions() {
+        return [
+            { id: 'temp', label: 'chart_temp' },
+            { id: 'pressure', label: 'chart_pressure' },
+            { id: 'volume', label: 'chart_volume' }
+        ];
+    }
+
     getDataForLog() {
-        return { val1: this.temp, val2: this.vol, value: this.temp * (1 / this.vol) };
+        // P = (N * k * T) / V
+        const pressure = (this.particles.length * 0.1 * this.temp) / (this.vol * 10);
+        return { 
+            temp: parseFloat(this.temp), 
+            pressure: pressure, 
+            volume: this.vol * 100 
+        };
     }
 
     getSnapshot() {

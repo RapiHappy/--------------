@@ -26,7 +26,7 @@ export const translations = {
         how_it_works: "Как это работает?",
         inspector: "Инспектор",
         no_data: "Нет данных",
-        chart_title: "График в реальном времени",
+        chart_title: "График",
         export: "Экспорт & Отчет",
         tasks: "Задания",
         theory_title: "База Знаний",
@@ -60,7 +60,15 @@ export const translations = {
         title_help: "Открыть чат с ИИ-помощником",
         title_lang: "Переключить язык (RU/EN)",
         title_theme: "Переключить тему (День/Ночь)",
-        pinned: "Закрепить предмет"
+        pinned: "Закрепить предмет",
+        chart_speed: "Скорость (v)",
+        chart_height: "Высота (h)",
+        chart_energy: "Энергия (E)",
+        chart_temp: "Температура (T)",
+        chart_pressure: "Давление (P)",
+        chart_volume: "Объем (V)",
+        chart_force: "Сила (F)",
+        chart_potential: "Потенциал (φ)"
     },
     en: {
         mechanics: "Mechanics",
@@ -80,7 +88,7 @@ export const translations = {
         how_it_works: "How it works?",
         inspector: "Inspector",
         no_data: "No data",
-        chart_title: "Real-time Chart",
+        chart_title: "Graph",
         export: "Export & Report",
         tasks: "Tasks",
         theory_title: "Knowledge Base",
@@ -114,7 +122,15 @@ export const translations = {
         title_help: "Open AI assistant chat",
         title_lang: "Switch language (RU/EN)",
         title_theme: "Switch theme (Day/Night)",
-        pinned: "Pin Object"
+        pinned: "Pin Object",
+        chart_speed: "Velocity (v)",
+        chart_height: "Height (h)",
+        chart_energy: "Energy (E)",
+        chart_temp: "Temperature (T)",
+        chart_pressure: "Pressure (P)",
+        chart_volume: "Volume (V)",
+        chart_force: "Force (F)",
+        chart_potential: "Potential (φ)"
     }
 };
 
@@ -191,6 +207,9 @@ export class Engine {
         this.rulerStart = null;
         this.rulerEnd = null;
         this.chartPoints = [];
+        this.chartType = 'speed';
+        this.chartHistory = [];
+        this.chartMaxHistory = 100;
         this.selection = null;
         this.selectionPart = null;
         this.isDragging = false;
@@ -324,6 +343,14 @@ export class Engine {
                     return;
                 }
 
+                if (el.closest('#clear-chart-btn')) {
+                    this.chartHistory = [];
+                    this.chartPoints = [];
+                    this.history = [];
+                    this.drawChart();
+                    return;
+                }
+
                 if (el.closest('#screenshot-btn')) {
                     this.takeScreenshot();
                     return;
@@ -385,6 +412,11 @@ export class Engine {
             }
             if (el.id === 'mission-diff-select') {
                 this.missions.setDifficulty(el.value);
+            }
+            if (el.id === 'chart-data-select') {
+                this.chartType = el.value;
+                this.chartPoints = [];
+                this.chartHistory = [];
             }
         });
 
@@ -594,7 +626,6 @@ export class Engine {
 
         panel.innerHTML = html || `<div class="empty-state" data-i18n="no_data">${t.no_data}</div>`;
     }
-
     updateUI() {
         const controls = document.getElementById('dynamic-controls');
         if (!controls) return;
@@ -605,18 +636,50 @@ export class Engine {
             if (lab.bindEvents) lab.bindEvents();
         }
         
+        this.updateChartSelect();
+    }
+
+    updateChartSelect() {
+        const select = document.getElementById('chart-data-select');
+        if (!select) return;
+
+        const lab = this.labs[this.activeLab];
+        const options = lab.getChartOptions ? lab.getChartOptions() : [];
+        
+        select.innerHTML = options.map(opt => `
+            <option value="${opt.id}">${translations[this.currentLang][opt.label] || opt.label}</option>
+        `).join('');
+
+        if (options.length > 0) {
+            this.chartType = options[0].id;
+        }
         this.chartPoints = [];
+        this.chartHistory = [];
     }
 
     logData() {
         const lab = this.labs[this.activeLab];
         if (!lab || !lab.getDataForLog) return;
+        
         const data = lab.getDataForLog();
-        this.history.push({ t: Date.now(), ...data });
-        if (this.history.length > 100) this.history.shift();
+        const t = Date.now();
+        
+        // Add to persistent history for export
+        this.history.push({ t, ...data });
+        if (this.history.length > 500) this.history.shift();
 
-        this.chartPoints.push(data.value);
-        if (this.chartPoints.length > 50) this.chartPoints.shift();
+        // Extract value for the specific chart type
+        let val = null;
+        if (this.chartType === 'energy') {
+            // Special case: energy usually returns { kinetic, potential, total }
+            val = data.energy || { kinetic: 0, potential: 0, total: 0 };
+        } else {
+            val = data[this.chartType] || 0;
+        }
+
+        this.chartHistory.push({ t, val });
+        if (this.chartHistory.length > this.chartMaxHistory) this.chartHistory.shift();
+        
         this.drawChart();
     }
 
@@ -625,47 +688,100 @@ export class Engine {
         if (!canvas || !canvas.parentElement) return;
         
         const rect = canvas.parentElement.getBoundingClientRect();
-        if (rect.width === 0) return; // Parent is hidden or not ready
+        if (rect.width === 0) return;
 
         canvas.width = rect.width;
-        canvas.height = 150;
+        canvas.height = rect.height;
         
         const ctx = canvas.getContext('2d');
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         
-        // Filter out bad data
-        const validPoints = this.chartPoints.filter(p => p !== null && p !== undefined && !isNaN(p));
-        if (validPoints.length < 2) return;
-        
-        ctx.strokeStyle = '#00f0ff';
-        ctx.lineWidth = 2;
-        ctx.lineJoin = 'round';
-        ctx.beginPath();
-        
-        const max = Math.max(...validPoints);
-        const min = Math.min(...validPoints);
-        const range = (max - min) || 1;
+        if (this.chartHistory.length < 2) {
+            ctx.fillStyle = this.themeCache.objColor;
+            ctx.globalAlpha = 0.3;
+            ctx.textAlign = 'center';
+            ctx.fillText(translations[this.currentLang].no_data, canvas.width/2, canvas.height/2);
+            return;
+        }
 
-        // Draw axis labels
-        ctx.fillStyle = this.themeCache.objColor;
-        ctx.font = '10px Inter, sans-serif';
-        ctx.globalAlpha = 0.6;
-        ctx.fillText(max.toFixed(2), 5, 15);
-        ctx.fillText(min.toFixed(2), 5, canvas.height - 5);
-        ctx.globalAlpha = 1.0;
+        const padding = { top: 20, bottom: 20, left: 40, right: 10 };
+        const w = canvas.width - padding.left - padding.right;
+        const h = canvas.height - padding.top - padding.bottom;
 
-        validPoints.forEach((p, i) => {
-            const x = (i / (validPoints.length - 1)) * canvas.width;
-            const y = canvas.height - 10 - ((p - min) / range) * (canvas.height - 20);
-            if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        // Determine range
+        let min = Infinity;
+        let max = -Infinity;
+
+        this.chartHistory.forEach(point => {
+            const val = point.val;
+            if (typeof val === 'object') {
+                Object.values(val).forEach(v => {
+                    min = Math.min(min, v);
+                    max = Math.max(max, v);
+                });
+            } else {
+                min = Math.min(min, val);
+                max = Math.max(max, val);
+            }
         });
-        ctx.stroke();
 
-        // Add glow
-        ctx.globalAlpha = 0.3;
-        ctx.lineWidth = 4;
-        ctx.stroke();
-        ctx.globalAlpha = 1.0;
+        if (max === min) { max = min + 1; min = min - 1; }
+        const range = max - min;
+
+        // Draw Grid
+        ctx.strokeStyle = this.themeCache.objColor;
+        ctx.globalAlpha = 0.05;
+        ctx.lineWidth = 1;
+        for (let i = 0; i <= 4; i++) {
+            const y = padding.top + (i / 4) * h;
+            ctx.beginPath();
+            ctx.moveTo(padding.left, y);
+            ctx.lineTo(canvas.width - padding.right, y);
+            ctx.stroke();
+        }
+
+        // Draw Labels
+        ctx.globalAlpha = 0.6;
+        ctx.fillStyle = this.themeCache.objColor;
+        ctx.font = '10px Outfit';
+        ctx.textAlign = 'right';
+        ctx.fillText(max.toFixed(1), padding.left - 5, padding.top + 5);
+        ctx.fillText(min.toFixed(1), padding.left - 5, padding.top + h + 5);
+
+        // Draw Legend for multi-line
+        if (this.chartType === 'energy') {
+            const colors = { kinetic: '#3b82f6', potential: '#f472b6', total: '#22d3ee' };
+            let lx = padding.left + 5;
+            Object.keys(colors).forEach(k => {
+                ctx.fillStyle = colors[k];
+                ctx.fillRect(lx, 5, 8, 8);
+                ctx.fillStyle = this.themeCache.objColor;
+                ctx.fillText(k[0].toUpperCase() + k.slice(1), lx + 45, 12);
+                lx += 60;
+            });
+        }
+
+        // Draw Lines
+        const drawLine = (getData, color) => {
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            this.chartHistory.forEach((p, i) => {
+                const val = getData(p.val);
+                const x = padding.left + (i / (this.chartHistory.length - 1)) * w;
+                const y = padding.top + h - ((val - min) / range) * h;
+                if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+            });
+            ctx.stroke();
+        };
+
+        if (this.chartType === 'energy') {
+            drawLine(v => v.kinetic, '#3b82f6');
+            drawLine(v => v.potential, '#f472b6');
+            drawLine(v => v.total, '#22d3ee');
+        } else {
+            drawLine(v => v, '#00f0ff');
+        }
     }
 
     exportCSV() {

@@ -126,8 +126,42 @@ export class ElectroLab {
         return this.charges.find(c => c.pos.dist(pos) < 30);
     }
 
+    getChartOptions() {
+        return [
+            { id: 'force', label: 'chart_force' },
+            { id: 'potential', label: 'chart_potential' }
+        ];
+    }
+
     getDataForLog() {
-        return { val1: this.charges.length, val2: 0, value: this.charges.length };
+        const selection = this.engine.selection;
+        let force = 0;
+        if (selection && selection.q !== undefined) {
+            // Find force on selected charge
+            const idx = this.charges.indexOf(selection);
+            let totalF = new Vec2(0, 0);
+            this.charges.forEach((c2, j) => {
+                if (idx === j) return;
+                const distVec = selection.pos.sub(c2.pos);
+                const distSq = Math.max(distVec.x * distVec.x + distVec.y * distVec.y, 400);
+                const forceMag = (selection.q * c2.q) / distSq * 50;
+                totalF = totalF.add(distVec.unit().mult(forceMag));
+            });
+            force = totalF.mag();
+        }
+
+        let totalPotential = 0;
+        for (let i = 0; i < this.charges.length; i++) {
+            for (let j = i + 1; j < this.charges.length; j++) {
+                const r = this.charges[i].pos.dist(this.charges[j].pos);
+                totalPotential += (this.charges[i].q * this.charges[j].q) / Math.max(r, 20);
+            }
+        }
+
+        return { 
+            force: force,
+            potential: totalPotential * 0.1
+        };
     }
 
     getSnapshot() {
