@@ -25,19 +25,24 @@
 }
 
 [data-theme="light"] {
-    --bg-main: #f8fafc;
-    --bg-surface: rgba(255, 255, 255, 0.95);
-    --glass-bg: rgba(255, 255, 255, 0.8);
-    --glass-border: rgba(15, 23, 42, 0.1);
+    --bg-main: #f1f5f9;
+    --bg-surface: #ffffff;
+    --glass-bg: #ffffff;
+    --glass-border: rgba(15, 23, 42, 0.12);
     --text-primary: #0f172a;
     --text-secondary: #475569;
     --accent: #2563eb;
-    --accent-glow: rgba(37, 99, 235, 0.1);
+    --accent-glow: rgba(37, 99, 235, 0.15);
     --chat-surface: #ffffff;
     --canvas-bg: #ffffff;
     --obj-color: #1e293b;
-    --formula-bg: #f1f5f9;
+    --formula-bg: #f8fafc;
+    --tool-btn-bg: #f1f5f9;
+    --control-btn-bg: #e2e8f0;
+    --inspector-bg: #f8fafc;
 }
+
+.hidden { display: none !important; }
 
 * {
     margin: 0;
@@ -310,7 +315,7 @@ body {
 
 .tool-btn {
     width: 100%; 
-    background: rgba(255, 255, 255, 0.04); 
+    background: var(--tool-btn-bg, rgba(255, 255, 255, 0.04)); 
     border: 1px solid var(--glass-border);
     color: var(--text-primary); 
     padding: 15px 20px; 
@@ -354,9 +359,9 @@ body {
     flex: 1;
     height: 54px;
     border-radius: 16px;
-    background: rgba(30, 41, 59, 0.5);
+    background: var(--control-btn-bg, rgba(30, 41, 59, 0.5));
     border: 1px solid var(--glass-border);
-    color: #fff;
+    color: var(--text-primary);
     font-size: 1.4rem;
     display: flex;
     align-items: center;
@@ -409,8 +414,8 @@ input[type="range"]::-webkit-slider-thumb {
     border-radius: var(--radius-lg); 
     overflow: hidden; 
     position: relative; 
-    background: #000;
-    box-shadow: inset 0 0 50px rgba(0,0,0,0.8), 0 10px 40px rgba(0,0,0,0.3);
+    background: var(--canvas-bg);
+    box-shadow: inset 0 0 50px rgba(0,0,0,0.5), 0 10px 40px rgba(0,0,0,0.1);
 }
 
 #physics-canvas { width: 100%; height: 100%; display: block; }
@@ -432,11 +437,11 @@ input[type="range"]::-webkit-slider-thumb {
 }
 
 .inspector-content { 
-    background: rgba(0, 0, 0, 0.2); 
+    background: var(--inspector-bg, rgba(0, 0, 0, 0.2)); 
     border-radius: 14px; 
     padding: 16px; 
     min-height: 100px;
-    border: 1px solid rgba(255,255,255,0.03);
+    border: 1px solid var(--glass-border);
 }
 
 .inspector-item {
@@ -459,19 +464,26 @@ input[type="range"]::-webkit-slider-thumb {
 .inspector-item b { color: var(--accent); font-family: 'JetBrains Mono', monospace; }
 
 .chart-container { 
-    height: 160px; 
-    background: rgba(0, 0, 0, 0.3); 
+    height: 180px; 
+    background: var(--inspector-bg, rgba(0, 0, 0, 0.3)); 
     border-radius: 14px; 
     border: 1px solid var(--glass-border);
     overflow: hidden;
+    position: relative;
 }
 
 #chartCanvas { width: 100% !important; height: 100% !important; }
 
 /* MODALS */
 .modal-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    z-index: 9000;
     background: rgba(0, 0, 0, 0.85);
     backdrop-filter: blur(8px);
+    display: none;
+    justify-content: center;
+    align-items: center;
 }
 
 .modal { 

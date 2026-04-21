@@ -112,54 +112,56 @@
 
             <!-- Right Sidebar -->
             <aside class="sidebar right-sidebar glass">
-                <div class="sidebar-section">
-                    <div class="section-header">
-                        <span class="icon">🔍</span> <span data-i18n="inspector">Инспектор</span>
-                    </div>
-                    <div class="inspector-content" id="inspector-data">
-                        <div class="empty-state" data-i18n="no_data">Нет данных</div>
-                    </div>
-                </div>
-
-                <!-- Academic Section: Charts -->
-                <div class="sidebar-section">
-                    <div class="section-header">
-                        <span class="icon">📈</span> <span data-i18n="chart_title">График в реальном времени</span>
-                    </div>
-                    <div class="chart-container">
-                        <canvas id="chartCanvas"></canvas>
-                    </div>
-                </div>
-
-                <!-- Academic Section: Tasks & Missions -->
-                <div class="sidebar-section">
-                    <div class="section-header">
-                        <span class="icon">🎯</span> <span data-i18n="tasks">Задания</span>
-                        <div class="header-actions-small">
-                            <select id="mission-diff-select" class="mini-select">
-                                <option value="easy">Easy</option>
-                                <option value="medium">Medium</option>
-                                <option value="hard">Hard</option>
-                            </select>
-                            <button id="refresh-missions-btn" title="Refresh missions via AI">🔄</button>
+                <div class="sidebar-scroll">
+                    <!-- Dynamic Inspector -->
+                    <div class="sidebar-section">
+                        <div class="section-header">
+                            <span class="icon">🔍</span> <span data-i18n="inspector">ИНСПЕКТОР</span>
+                        </div>
+                        <div class="inspector-content" id="inspector-data">
+                            <div class="no-data" data-i18n="no_data">Нет данных</div>
                         </div>
                     </div>
-                    <div class="mission-container" id="mission-list">
-                        <!-- Loaded by MissionManager.js -->
+
+                    <!-- Real-time Chart -->
+                    <div class="sidebar-section">
+                        <div class="section-header">
+                            <span class="icon">📈</span> <span data-i18n="chart_title">ГРАФИК В РЕАЛЬНОМ ВРЕМЕНИ</span>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="chartCanvas"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Missions & Tasks -->
+                    <div class="sidebar-section">
+                        <div class="section-header">
+                            <span class="icon">🎯</span> <span data-i18n="tasks">ЗАДАНИЯ</span>
+                            <div class="header-actions-small">
+                                <select class="mini-select" id="mission-diff-select">
+                                    <option value="easy">Easy</option>
+                                    <option value="medium">Medium</option>
+                                    <option value="hard">Hard</option>
+                                </select>
+                                <button id="refresh-missions-btn" title="Refresh missions via AI">🔄</button>
+                            </div>
+                        </div>
+                        <div class="mission-container" id="mission-list">
+                            <!-- Loaded by MissionManager.js -->
+                        </div>
+                    </div>
+
+                    <!-- Export Section -->
+                    <div class="sidebar-section">
+                        <div class="section-header">
+                            <span class="icon">💾</span> <span data-i18n="export">Экспорт & Отчет</span>
+                        </div>
+                        <div class="export-actions">
+                            <button id="export-csv-btn" class="export-btn" title="Скачать данные движения в формате CSV">📥 CSV</button>
+                            <button id="screenshot-btn" class="export-btn" title="Сохранить текущий вид холста как PNG">📷 PNG</button>
+                        </div>
                     </div>
                 </div>
-
-                <!-- Export Section -->
-                <div class="sidebar-section">
-                    <div class="section-header">
-                        <span class="icon">💾</span> <span data-i18n="export">Экспорт & Отчет</span>
-                    </div>
-                    <div class="export-actions">
-                        <button id="export-csv-btn" class="export-btn" title="Скачать данные движения в формате CSV">📥 CSV</button>
-                        <button id="screenshot-btn" class="export-btn" title="Сохранить текущий вид холста как PNG">📷 PNG</button>
-                    </div>
-                </div>
-
             </aside>
         </main>
 

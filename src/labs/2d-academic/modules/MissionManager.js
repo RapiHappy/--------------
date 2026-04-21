@@ -18,10 +18,22 @@ export class MissionManager {
     init() {
         this.loadPersistence();
         this.checkDailyReset();
+        
+        // Bind UI Events
+        const diffSelect = document.getElementById('mission-diff-select');
+        if (diffSelect) {
+            diffSelect.value = this.difficulty;
+            diffSelect.onchange = (e) => this.setDifficulty(e.target.value);
+        }
+
+        const refreshBtn = document.getElementById('refresh-missions-btn');
+        if (refreshBtn) {
+            refreshBtn.onclick = () => this.generateAIMissions(true);
+        }
+
         this.render();
         setInterval(() => this.update(), 1000);
         
-        // Initial AI generation if needed
         setTimeout(() => {
             if (this.aiMissions.length === 0) this.generateAIMissions();
         }, 2000);
