@@ -1,8 +1,8 @@
 import * as THREE from 'three';
-import { PulseLoader } from '../../shared/SpecialEffects.js';
+import { MasterVortexLoader } from '../../shared/SpecialEffects.js';
 
 window.onload = () => {
-    const loader = new PulseLoader('neuralCanvas');
+    const loader = new MasterVortexLoader('neuralCanvas');
     setTimeout(() => {
         const preloader = document.getElementById('preloader');
         preloader.style.opacity = '0';

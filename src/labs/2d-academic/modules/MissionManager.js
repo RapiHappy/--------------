@@ -189,7 +189,8 @@ export class MissionManager {
     }
 
     getAllMissions() {
-        return [...this.staticMissions.filter(m => m.category === this.engine.activeLab), ...this.aiMissions];
+        const staticInCategory = this.staticMissions.filter(m => m.category === this.engine.activeLab);
+        return [...staticInCategory, ...this.aiMissions];
     }
 
     getCurrentMissionsText() {

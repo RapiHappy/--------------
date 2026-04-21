@@ -4,13 +4,20 @@ export class ChatController {
         this.isOpen = false;
         this.messages = [];
         
-        // Load API Keys
-        this.geminiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
-        this.yandexKey = import.meta.env.VITE_YANDEX_API_KEY || '';
-        this.folderId = import.meta.env.VITE_YANDEX_FOLDER_ID || '';
+        // Safe API Key Loading
+        try {
+            this.geminiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
+            this.yandexKey = import.meta.env.VITE_YANDEX_API_KEY || '';
+            this.folderId = import.meta.env.VITE_YANDEX_FOLDER_ID || '';
+        } catch (e) {
+            console.error("AI: Environment variables are inaccessible.", e);
+            this.geminiKey = '';
+            this.yandexKey = '';
+            this.folderId = '';
+        }
         
         if (!this.geminiKey && !this.yandexKey) {
-            console.warn("TechPhys AI: No AI keys found in .env file.");
+            console.warn("TechPhys AI: No API keys found. AI features will be disabled.");
         }
         
         this.setupUI();
