@@ -251,73 +251,102 @@ export class QuantumPulseLoader {
     animate() {
         if (!this.active) return;
         
-        this.ctx.fillStyle = 'rgba(5, 6, 8, 0.12)'; 
+        // Deep space trail effect
+        this.ctx.fillStyle = 'rgba(5, 6, 8, 0.15)'; 
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         
-        this.angle += 0.03; 
+        this.angle += 0.02; 
         const cx = this.canvas.width / 2;
         const cy = this.canvas.height / 2;
         
         this.ctx.globalCompositeOperation = 'lighter';
         
-        this.circles.forEach((c, idx) => {
-            const rot = this.angle * c.speed * 50;
+        // 1. BACKGROUND NEBULA STARS
+        this.stars.forEach(s => {
+            const parallax = Math.sin(this.angle * 0.2) * 20;
+            const x = cx + s.x * cx + parallax;
+            const y = cy + s.y * cy + Math.cos(this.angle * 0.2) * 10;
+            const opacity = 0.1 + Math.abs(Math.sin(this.angle + s.x * 10)) * 0.5;
             
-            // Draw Orbit Ring - HIGHER VISIBILITY
-            this.ctx.strokeStyle = c.color;
-            this.ctx.lineWidth = 2;
-            this.ctx.globalAlpha = 0.6; 
+            this.ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
             this.ctx.beginPath();
-            this.ctx.arc(cx, cy, c.r, 0, Math.PI * 2);
-            this.ctx.stroke();
-            this.ctx.globalAlpha = 1.0;
+            this.ctx.arc(x, y, s.s, 0, Math.PI * 2);
+            this.ctx.fill();
+        });
+
+        // 2. QUANTUM ENERGY ARCS (Streaks)
+        this.ctx.lineWidth = 1.5;
+        for (let i = 0; i < 3; i++) {
+            const r = 100 + i * 40 + Math.sin(this.angle * 2) * 10;
+            const startA = this.angle * (1 + i * 0.2);
+            const endA = startA + Math.PI * 0.8;
             
-            // Draw Orbiting Particles - OPTIMIZED
+            const grad = this.ctx.createLinearGradient(
+                cx + Math.cos(startA) * r, cy + Math.sin(startA) * r,
+                cx + Math.cos(endA) * r, cy + Math.sin(endA) * r
+            );
+            grad.addColorStop(0, 'transparent');
+            grad.addColorStop(0.5, this.circles[i].color);
+            grad.addColorStop(1, 'transparent');
+            
+            this.ctx.strokeStyle = grad;
+            this.ctx.beginPath();
+            this.ctx.arc(cx, cy, r, startA, endA);
+            this.ctx.stroke();
+        }
+
+        // 3. ORBITAL PARTICLES WITH TAILS
+        this.circles.forEach((c, idx) => {
+            const rot = this.angle * c.speed * 40;
+            
             for(let i=0; i<c.pCount; i++) {
                 const step = (Math.PI * 2) / c.pCount;
                 const a = rot + i * step;
                 const px = cx + Math.cos(a) * c.r;
                 const py = cy + Math.sin(a) * c.r;
                 
-                // Single glow point per particle instead of full radial gradient for every pixel
-                this.ctx.fillStyle = c.color;
-                this.ctx.shadowBlur = 20;
+                // Glow point
+                this.ctx.shadowBlur = 15;
                 this.ctx.shadowColor = c.color;
+                this.ctx.fillStyle = c.color;
                 this.ctx.beginPath();
-                this.ctx.arc(px, py, 4, 0, Math.PI * 2);
+                this.ctx.arc(px, py, 3 + Math.sin(this.angle + i) * 2, 0, Math.PI * 2);
                 this.ctx.fill();
-                this.ctx.shadowBlur = 0; // Reset for next elements
                 
+                // Realistic highlight
+                this.ctx.shadowBlur = 0;
                 this.ctx.fillStyle = '#fff';
                 this.ctx.beginPath();
-                this.ctx.arc(px, py, 2, 0, Math.PI * 2);
+                this.ctx.arc(px, py, 1.5, 0, Math.PI * 2);
                 this.ctx.fill();
             }
         });
 
-        // DRAW STARS - Optimized batch rendering
-        this.ctx.fillStyle = '#fff';
-        this.stars.forEach(s => {
-            const x = cx + s.x * cx + Math.cos(this.angle * 0.5) * 15;
-            const y = cy + s.y * cy + Math.sin(this.angle * 0.5) * 15;
-            this.ctx.globalAlpha = 0.1 + Math.random() * 0.4;
-            this.ctx.fillRect(x, y, s.s, s.s);
-        });
-        this.ctx.globalAlpha = 1.0;
-
-        // DRAW CENTRAL QUANTUM CORE - HIGH IMPACT
-        const pulse = Math.sin(this.angle * 2) * 5 + 35;
-        this.ctx.shadowBlur = pulse * 1.5;
-        this.ctx.shadowColor = '#00f0ff';
+        // 4. CENTRAL SUPERNOVA CORE (Hyper-realistic glow)
+        const pulse = Math.sin(this.angle * 4) * 8 + 45;
         
-        const coreGrad = this.ctx.createRadialGradient(cx, cy, 0, cx, cy, pulse * 1.5);
-        coreGrad.addColorStop(0, '#fff');
-        coreGrad.addColorStop(0.3, '#00f0ff');
-        coreGrad.addColorStop(1, 'transparent');
-        
-        this.ctx.fillStyle = coreGrad;
+        // Volumetric Bloom Layer 1
+        const coreGrad1 = this.ctx.createRadialGradient(cx, cy, 0, cx, cy, pulse * 2.5);
+        coreGrad1.addColorStop(0, 'rgba(0, 240, 255, 0.4)');
+        coreGrad1.addColorStop(0.4, 'rgba(168, 85, 247, 0.1)');
+        coreGrad1.addColorStop(1, 'transparent');
+        this.ctx.fillStyle = coreGrad1;
         this.ctx.beginPath();
-        this.ctx.arc(cx, cy, pulse * 1.2, 0, Math.PI * 2);
+        this.ctx.arc(cx, cy, pulse * 2.5, 0, Math.PI * 2);
+        this.ctx.fill();
+
+        // High Intensity Core
+        const coreGrad2 = this.ctx.createRadialGradient(cx, cy, 0, cx, cy, pulse);
+        coreGrad2.addColorStop(0, '#fff');
+        coreGrad2.addColorStop(0.2, '#00f0ff');
+        coreGrad2.addColorStop(0.6, 'rgba(0, 240, 255, 0.5)');
+        coreGrad2.addColorStop(1, 'transparent');
+        
+        this.ctx.shadowBlur = 40;
+        this.ctx.shadowColor = '#00f0ff';
+        this.ctx.fillStyle = coreGrad2;
+        this.ctx.beginPath();
+        this.ctx.arc(cx, cy, pulse, 0, Math.PI * 2);
         this.ctx.fill();
         this.ctx.shadowBlur = 0;
         
