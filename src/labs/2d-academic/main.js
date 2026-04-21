@@ -2,12 +2,12 @@ import { Engine } from './modules/Engine.js';
 import { TutorialManager } from './modules/TutorialManager.js';
 import { PremiumControls } from '../../shared/PremiumControls.js';
 import { i18n } from '../../shared/I18nManager.js';
-import { QuantumPulseLoader } from '../../shared/SpecialEffects.js';
+import { MasterVortexLoader } from '../../shared/SpecialEffects.js';
 
 window.onload = () => {
     let loader;
     try {
-        loader = new QuantumPulseLoader('loaderCanvas', 'TECHPHYS ACADEMIC');
+        loader = new MasterVortexLoader('loaderCanvas', 'TECHPHYS ACADEMIC');
     } catch (e) {
         console.error("Loader failed:", e);
     }

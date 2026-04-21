@@ -278,10 +278,10 @@
     <script type="module">
         import { PremiumControls } from './src/shared/PremiumControls.js';
         import { i18n } from './src/shared/I18nManager.js';
-        import { MasterVortexLoader } from './src/shared/SpecialEffects.js';
+        import { QuantumPulseLoader } from './src/shared/SpecialEffects.js';
 
         // Initialize Unique Hub Vortex Animation
-        window.hubLoader = new MasterVortexLoader('hubCanvas', 'TECHPHYS HUB');
+        window.hubLoader = new QuantumPulseLoader('hubCanvas', 'TECHPHYS HUB');
         new PremiumControls();
         setTimeout(() => i18n.init(), 100);
 

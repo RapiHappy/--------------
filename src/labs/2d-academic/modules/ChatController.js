@@ -3,11 +3,14 @@ export class ChatController {
         this.engine = engine;
         this.isOpen = false;
         this.messages = [];
-        try {
-            this.apiKey = import.meta?.env?.VITE_GEMINI_API_KEY || '';
-        } catch(e) {
-            this.apiKey = '';
+        
+        // Ensure we get the key correctly from Vite's env
+        this.apiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
+        
+        if (!this.apiKey) {
+            console.warn("TechPhys AI: VITE_GEMINI_API_KEY is missing in .env file.");
         }
+        
         this.setupUI();
     }
 
@@ -56,6 +59,12 @@ export class ChatController {
         this.input.value = '';
 
         const typingId = this.addTypingIndicator();
+
+        if (!this.apiKey) {
+            this.removeTypingIndicator(typingId);
+            this.addMessage("Ошибка: API ключ Gemini не найден. Проверьте файл .env и перезагрузите сервер (Vite).", 'bot');
+            return;
+        }
 
         try {
             const systemPrompt = `You are TechPhys AI, a brilliant and helpful physics assistant. Answer questions concisely and scientifically. Use markdown for formulas. 
