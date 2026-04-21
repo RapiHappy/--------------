@@ -9,7 +9,8 @@ export class MissionManager {
         this.staticMissions = [
             { id: 'm1', category: 'mechanics', title: { ru: "Первый закон", en: "First Law" }, desc: { ru: "Создайте шар массой более 5 кг", en: "Create a ball with mass > 5kg" }, check: () => (this.engine.labs.mechanics.objects || []).some(o => (o.m || 0) > 5), done: false },
             { id: 't1', category: 'thermo', title: { ru: "Нагрев", en: "Heating" }, desc: { ru: "Ускорьте время до 2.0x", en: "Set sim speed to 2.0x" }, check: () => this.engine.timeScale >= 2.0, done: false },
-            { id: 'o1', category: 'optics', title: { ru: "Да будет свет", en: "Let there be light" }, desc: { ru: "Включите лазер в Оптике", en: "Enable laser in Optics" }, check: () => this.engine.activeLab === 'optics' && (this.engine.labs.optics.lasers || []).length > 0, done: false }
+            { id: 'o1', category: 'optics', title: { ru: "Да будет свет", en: "Let there be light" }, desc: { ru: "Включите лазер в Оптике", en: "Enable laser in Optics" }, check: () => this.engine.activeLab === 'optics' && (this.engine.labs.optics.lasers || []).length > 0, done: false },
+            { id: 'e1', category: 'electro', title: { ru: "Заряд", en: "Charge" }, desc: { ru: "Создайте положительный заряд", en: "Create a positive charge" }, check: () => (this.engine.labs.electro.charges || []).some(c => c.q > 0), done: false }
         ];
 
         this.init();
@@ -28,7 +29,10 @@ export class MissionManager {
 
         const refreshBtn = document.getElementById('refresh-missions-btn');
         if (refreshBtn) {
-            refreshBtn.onclick = () => this.generateAIMissions(true);
+            refreshBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.generateAIMissions(true);
+            });
         }
 
         this.render();
