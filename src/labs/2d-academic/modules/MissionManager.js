@@ -72,7 +72,15 @@ export class MissionManager {
             this.render();
         } else {
             console.warn("AI Missions failed, using static fallback.");
-            this.render();
+            if (container) {
+                container.innerHTML = `
+                    <div class="error-state">
+                        <p>⚠️ Не удалось сгенерировать задания от ИИ.</p>
+                        <button class="retry-btn" onclick="window.engine.missions.generateAIMissions(true)">Попробовать снова</button>
+                    </div>
+                `;
+            }
+            // Still render after a delay or just keep error
         }
     }
 

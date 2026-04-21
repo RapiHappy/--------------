@@ -16,11 +16,11 @@ export class TutorialManager {
     }
 
     setup() {
-        if (this.finishBtn) this.finishBtn.onclick = () => this.hide();
-        if (this.closeBtn) this.closeBtn.onclick = () => this.hide();
-        if (this.triggerBtn) this.triggerBtn.onclick = () => this.show();
-        if (this.nextBtn) this.nextBtn.onclick = () => this.nextStep();
-        if (this.prevBtn) this.prevBtn.onclick = () => this.prevStep();
+        if (this.finishBtn) this.finishBtn.addEventListener('click', (e) => { e.stopPropagation(); this.hide(); });
+        if (this.closeBtn) this.closeBtn.addEventListener('click', (e) => { e.stopPropagation(); this.hide(); });
+        if (this.triggerBtn) this.triggerBtn.addEventListener('click', (e) => { e.stopPropagation(); this.show(); });
+        if (this.nextBtn) this.nextBtn.addEventListener('click', (e) => { e.stopPropagation(); this.nextStep(); });
+        if (this.prevBtn) this.prevBtn.addEventListener('click', (e) => { e.stopPropagation(); this.prevStep(); });
     }
 
     checkAutoShow() {

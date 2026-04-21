@@ -25,17 +25,18 @@ export class ChatController {
         this.reopenBtn = document.getElementById('chat-reopen-btn');
         this.closeBtn = document.getElementById('chat-close');
 
-        if (this.sendBtn) this.sendBtn.onclick = () => this.sendMessage();
-        if (this.input) this.input.onkeypress = (e) => { if (e.key === 'Enter') this.sendMessage(); };
-        if (this.toggleBtn) this.toggleBtn.onclick = () => this.toggle();
-        if (this.reopenBtn) this.reopenBtn.onclick = () => this.open();
-        if (this.closeBtn) this.closeBtn.onclick = () => this.close();
+        if (this.sendBtn) this.sendBtn.addEventListener('click', (e) => { e.stopPropagation(); this.sendMessage(); });
+        if (this.input) this.input.addEventListener('keypress', (e) => { if (e.key === 'Enter') { e.stopPropagation(); this.sendMessage(); } });
+        if (this.toggleBtn) this.toggleBtn.addEventListener('click', (e) => { e.stopPropagation(); this.toggle(); });
+        if (this.reopenBtn) this.reopenBtn.addEventListener('click', (e) => { e.stopPropagation(); this.open(); });
+        if (this.closeBtn) this.closeBtn.addEventListener('click', (e) => { e.stopPropagation(); this.close(); });
 
         document.querySelectorAll('.chat-chip').forEach(chip => {
-            chip.onclick = () => {
+            chip.addEventListener('click', (e) => {
+                e.stopPropagation();
                 this.input.value = chip.innerText;
                 this.sendMessage();
-            };
+            });
         });
     }
 
@@ -195,6 +196,7 @@ Types: action_check (requires user to do something). Titles and desk must be fun
             let missionsStr = "";
 
             if (this.yandexKey && this.folderId) {
+                console.log("Fetching missions from Yandex GPT...");
                 const response = await fetch("https://llm.api.cloud.yandex.net/foundationModels/v1/completion", {
                     method: 'POST',
                     headers: {
@@ -206,13 +208,17 @@ Types: action_check (requires user to do something). Titles and desk must be fun
                         completionOptions: { stream: false, temperature: 0.8, maxTokens: "1000" },
                         messages: [
                             { role: "system", text: systemPrompt },
-                            { role: "user", text: "Generate missions JSON now." }
+                            { role: "user", text: "Please return the 3 missions in the requested JSON format." }
                         ]
                     })
                 });
                 const data = await response.json();
+                if (!data.result || !data.result.alternatives) {
+                    throw new Error("Yandex GPT returned invalid data: " + JSON.stringify(data));
+                }
                 missionsStr = data.result.alternatives[0].message.text;
             } else {
+                console.log("Fetching missions from Gemini...");
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${this.geminiKey}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -222,12 +228,20 @@ Types: action_check (requires user to do something). Titles and desk must be fun
                     })
                 });
                 const data = await response.json();
+                if (!data.candidates) throw new Error("Invalid Gemini Response: " + JSON.stringify(data));
                 missionsStr = data.candidates[0].content.parts[0].text;
             }
 
-            // Cleanup potential markdown backticks from Yandex
-            const cleaned = missionsStr.replace(/```json/g, '').replace(/```/g, '').trim();
-            return JSON.parse(cleaned).missions;
+            // Robust JSON Extraction: Find the first '{' and last '}'
+            const startIdx = missionsStr.indexOf('{');
+            const endIdx = missionsStr.lastIndexOf('}') + 1;
+            if (startIdx === -1 || endIdx === 0) throw new Error("No JSON found in response");
+            
+            const cleaned = missionsStr.substring(startIdx, endIdx);
+            const parsed = JSON.parse(cleaned);
+            
+            if (!parsed.missions) throw new Error("Missions field not found in JSON");
+            return parsed.missions;
         } catch (err) {
             console.error("AI Mission Fetch Error:", err);
             return null;
