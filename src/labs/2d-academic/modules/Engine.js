@@ -221,7 +221,7 @@ export class Engine {
                     return;
                 }
                 if (el.closest('#hub-btn')) {
-                    window.location.href = '../../index.html';
+                    window.location.href = 'https://rapihappy.github.io/--------------/';
                     return;
                 }
                 if (el.id === 'lang-toggle') {
@@ -275,6 +275,16 @@ export class Engine {
                         modal.style.display = 'flex';
                         modal.classList.remove('hidden');
                     }
+                    return;
+                }
+
+                if (el.closest('#export-csv-btn')) {
+                    this.exportCSV();
+                    return;
+                }
+
+                if (el.closest('#screenshot-btn')) {
+                    this.takeScreenshot();
                     return;
                 }
 
@@ -467,31 +477,70 @@ export class Engine {
 
     drawChart() {
         const canvas = document.getElementById('chartCanvas');
-        if (!canvas) return;
+        if (!canvas || !canvas.parentElement) return;
         
-        if (canvas.parentElement) {
-            canvas.width = canvas.parentElement.clientWidth;
-            canvas.height = 150;
-        }
+        const rect = canvas.parentElement.getBoundingClientRect();
+        if (rect.width === 0) return; // Parent is hidden or not ready
+
+        canvas.width = rect.width;
+        canvas.height = 150;
         
         const ctx = canvas.getContext('2d');
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         
-        if (this.chartPoints.length < 2) return;
+        // Filter out bad data
+        const validPoints = this.chartPoints.filter(p => p !== null && p !== undefined && !isNaN(p));
+        if (validPoints.length < 2) return;
         
         ctx.strokeStyle = '#00f0ff';
         ctx.lineWidth = 2;
+        ctx.lineJoin = 'round';
         ctx.beginPath();
-        const max = Math.max(...this.chartPoints) || 1;
-        const min = Math.min(...this.chartPoints) || 0;
+        
+        const max = Math.max(...validPoints);
+        const min = Math.min(...validPoints);
         const range = (max - min) || 1;
 
-        this.chartPoints.forEach((p, i) => {
-            const x = (i / 49) * canvas.width;
-            const y = canvas.height - ((p - min) / range) * canvas.height;
+        validPoints.forEach((p, i) => {
+            const x = (i / (validPoints.length - 1)) * canvas.width;
+            const y = canvas.height - 10 - ((p - min) / range) * (canvas.height - 20);
             if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
         });
         ctx.stroke();
+
+        // Add glow
+        ctx.globalAlpha = 0.3;
+        ctx.lineWidth = 4;
+        ctx.stroke();
+        ctx.globalAlpha = 1.0;
+    }
+
+    exportCSV() {
+        if (!this.history.length) return alert("Нет данных для экспорта");
+        const headers = ["timestamp", ...Object.keys(this.history[0]).filter(k => k !== 't')];
+        const rows = this.history.map(entry => {
+            return [new Date(entry.t).toISOString(), ...headers.slice(1).map(h => entry[h])];
+        });
+        
+        const csvContent = "data:text/csv;charset=utf-8," 
+            + headers.join(",") + "\n"
+            + rows.map(r => r.join(",")).join("\n");
+            
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `techphys_data_${Date.now()}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    takeScreenshot() {
+        if (!this.canvas) return;
+        const link = document.createElement('a');
+        link.download = `techphys_snapshot_${Date.now()}.png`;
+        link.href = this.canvas.toDataURL('image/png');
+        link.click();
     }
 
     loop() {
