@@ -36,7 +36,7 @@ export class PremiumControls {
         if (this.hubBtn) {
             this.hubBtn.onclick = (e) => {
                 e.stopPropagation();
-                window.location.href = '../../index.html';
+                window.location.href = 'https://rapihappy.github.io/--------------/';
             };
         }
 

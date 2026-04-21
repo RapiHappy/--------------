@@ -243,6 +243,7 @@
         </div>
     <script>
         // Non-module fail-safe preloader script
+        (function() {
             // Minimum display time of 4.5 seconds to show off the premium animation
             const MIN_TIME = 4500;
             const startTime = Date.now();
@@ -263,7 +264,12 @@
                 }, remaining);
             };
 
-            window.addEventListener('load', hideSequence);
+            if (document.readyState === 'complete') {
+                hideSequence();
+            } else {
+                window.addEventListener('load', hideSequence);
+            }
+            
             // Backup fail-safe
             setTimeout(hideSequence, 8000);
         })();
