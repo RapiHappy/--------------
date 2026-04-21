@@ -222,7 +222,20 @@ export class MechanicsLab {
     }
 
     getDataForLog() {
-        const v = this.objects.length ? Math.abs(this.objects[0].vel.y) : 0;
+        const v = this.objects.length ? Math.abs(this.objects[0].vel?.y || 0) : 0;
         return { val1: v, val2: this.gravity, value: v };
+    }
+
+    getSnapshot() {
+        const maxV = this.objects.reduce((max, o) => Math.max(max, o.vel ? o.vel.mag() : 0), 0);
+        return {
+            objectCount: this.objects.length,
+            ballCount: this.objects.filter(o => o.type === 'ball').length,
+            springCount: this.objects.filter(o => o.type === 'spring').length,
+            maxSpeed: maxV,
+            gravity: this.gravity,
+            timeScale: this.engine.timeScale,
+            isPaused: this.engine.isPaused
+        };
     }
 }

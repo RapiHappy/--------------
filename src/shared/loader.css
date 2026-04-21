@@ -47,7 +47,7 @@ canvas[id$="Canvas"] {
     background: linear-gradient(90deg, #00f0ff, #ff00ff);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    filter: drop-shadow(0 0 15px rgba(0, 240, 255, 0.5));
+    filter: drop-shadow(0 0 8px rgba(0, 240, 255, 0.3));
     font-weight: 800;
 }
 
@@ -93,7 +93,7 @@ canvas[id$="Canvas"] {
     font-size: 4.5rem;
     letter-spacing: 0.15em;
     margin-bottom: 20px;
-    text-shadow: 0 0 50px rgba(0, 240, 255, 0.4), 0 0 100px rgba(255, 0, 255, 0.2);
+    text-shadow: 0 0 15px rgba(0, 240, 255, 0.4), 0 0 30px rgba(255, 0, 255, 0.2);
     color: #fff;
     opacity: 0;
     animation: loader-fade-in 1.2s cubic-bezier(0.23, 1, 0.32, 1) forwards 0.3s;

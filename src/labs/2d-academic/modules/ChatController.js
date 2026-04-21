@@ -197,8 +197,17 @@ Actions include:
         try {
             const systemPrompt = `You are a physics educational system. Generate 3 distinct interactive sandbox missions for the category: ${category}. Difficulty: ${difficulty}. 
 Return valid JSON ONLY in this format: 
-{ "missions": [ { "id": "u1", "title": {"ru": "...", "en": "..."}, "desc": {"ru": "...", "en": "..."}, "type": "action_check" } ] }
-Types: action_check (requires user to do something). Titles and desk must be fun and academic.`;
+{ "missions": [ { "id": "u1", "title": {"ru": "...", "en": "..."}, "desc": {"ru": "...", "en": "..."}, "checkCondition": "VARIABLE OPERATOR VALUE" } ] }
+
+Available Variables:
+- mechanics: ballCount, springCount, objectCount, maxSpeed, gravity, timeScale
+- thermo: temp, vol, particleCount
+- optics: mirrorCount, prismCount, objectCount
+- electro: chargeCount, posChargeCount, negChargeCount
+
+Operators: >, <, >=, <=, ===
+Examples: "maxSpeed > 50", "temp > 400", "mirrorCount >= 2", "timeScale < 0.5".
+Ensure the mission description matches the technical checkCondition.`;
 
             let missionsStr = "";
 

@@ -102,9 +102,11 @@ export class MissionManager {
             }
         });
 
-        // Check AI Missions (Generic logic)
+        // Check AI Missions
+        const snapshot = this.engine.activeLabInstance ? this.engine.activeLabInstance.getSnapshot() : {};
+        
         this.aiMissions.forEach(m => {
-            if (!m.done && this.genericCheck(m)) {
+            if (!m.done && this.evaluateCondition(m.checkCondition, snapshot)) {
                 m.done = true;
                 changed = true;
                 this.notify(m);
@@ -117,20 +119,33 @@ export class MissionManager {
         }
     }
 
-    genericCheck(m) {
-        const d = m.desc.en.toLowerCase();
-        const lab = this.engine.labs[this.engine.activeLab];
-
-        // Heuristic checks based on keywords in AI description
-        if (d.includes("create") || d.includes("spawn") || d.includes("place")) {
-            const count = (lab.objects?.length || 0) + (lab.particles?.length || 0) + (lab.charges?.length || 0);
-            return count > 0;
+    evaluateCondition(condition, snapshot) {
+        if (!condition || !snapshot) return false;
+        
+        try {
+            // condition format: "key > value" or "key === value"
+            const parts = condition.split(' ');
+            if (parts.length < 3) return false;
+            
+            const key = parts[0];
+            const op = parts[1];
+            const target = parseFloat(parts[2]);
+            const actual = snapshot[key];
+            
+            if (actual === undefined) return false;
+            
+            switch (op) {
+                case '>': return actual > target;
+                case '<': return actual < target;
+                case '>=': return actual >= target;
+                case '<=': return actual <= target;
+                case '===':
+                case '==': return Math.abs(actual - target) < 0.01;
+                default: return false;
+            }
+        } catch (e) {
+            return false;
         }
-        if (d.includes("pause")) return this.engine.isPaused;
-        if (d.includes("speed")) return this.engine.timeScale !== 1.0;
-        if (d.includes("delete") || d.includes("clear")) return false; // Hard to check purely by AI text without signal
-
-        return false;
     }
 
     savePersistence() {

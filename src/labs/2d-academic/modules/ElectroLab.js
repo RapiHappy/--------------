@@ -92,4 +92,13 @@ export class ElectroLab {
     getDataForLog() {
         return { val1: this.charges.length, val2: 0, value: this.charges.length };
     }
+
+    getSnapshot() {
+        return {
+            chargeCount: this.charges.length,
+            posChargeCount: this.charges.filter(c => c.q > 0).length,
+            negChargeCount: this.charges.filter(c => c.q < 0).length,
+            isPaused: this.engine.isPaused
+        };
+    }
 }

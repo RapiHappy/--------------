@@ -77,4 +77,13 @@ export class ThermoLab {
     getDataForLog() {
         return { val1: this.temp, val2: this.vol, value: this.temp * (1 / this.vol) };
     }
+
+    getSnapshot() {
+        return {
+            temp: this.temp,
+            vol: this.vol,
+            particleCount: this.particles.length,
+            isPaused: this.engine.isPaused
+        };
+    }
 }

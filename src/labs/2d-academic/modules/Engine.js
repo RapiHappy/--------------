@@ -202,6 +202,10 @@ export class Engine {
         this.init();
     }
 
+    get activeLabInstance() {
+        return this.labs[this.activeLab];
+    }
+
     init() {
         this.resize();
         window.addEventListener('resize', () => this.resize());

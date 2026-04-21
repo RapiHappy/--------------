@@ -205,4 +205,13 @@ export class OpticsLab {
         }
         return { val1: 0, val2: 0, value: 0 };
     }
+
+    getSnapshot() {
+        return {
+            objectCount: this.objects.length,
+            mirrorCount: this.objects.filter(o => o.type === 'mirror').length,
+            prismCount: this.objects.filter(o => o.type === 'prism').length,
+            isPaused: this.engine.isPaused
+        };
+    }
 }
