@@ -70,42 +70,40 @@ export class ChatController {
         const typingId = this.addTypingIndicator();
 
         try {
-            const systemPrompt = `You are TechPhys AI, a brilliant and helpful physics assistant. Answer questions concisely and scientifically. 
-Current Laboratory: ${this.engine.activeLab}.
-If the user asks to perform an action, include a JSON command: [COMMAND: ACTION_NAME, params]. 
-Actions: SPAWN_BALL, CLEAR, SET_GRAVITY, SHOW_MISSIONS.`;
+            const systemPrompt = `You are TechPhys AI, a brilliant physics assistant. Answer concisely. 
+Current Lab: ${this.engine.activeLab}.
+Commands: [COMMAND: SPAWN_BALL], [COMMAND: CLEAR], [COMMAND: SET_GRAVITY, val].`;
 
             if (!this.hfToken) {
                 this.removeTypingIndicator(typingId);
-                this.addMessage("Ошибка: Hugging Face токен не найден. Добавьте VITE_HF_TOKEN в .env.", 'bot');
+                this.addMessage("Ошибка: Токен не найден.", 'bot');
                 return;
             }
 
-            // Mistral Prompt Format
-            const prompt = `<s>[INST] ${systemPrompt}\n\nUser: ${text} [/INST]`;
+            // Using the more stable v1/chat/completions endpoint
+            const hfUrl = `https://api-inference.huggingface.co/v1/chat/completions`;
+            const proxiedUrl = `https://corsproxy.io/?${encodeURIComponent(hfUrl)}`;
 
-            // Direct Hugging Face API (Phi-3)
-            const hfUrl = `https://api-inference.huggingface.co/models/microsoft/Phi-3-mini-4k-instruct`;
-
-            const response = await fetch(hfUrl, {
+            const response = await fetch(proxiedUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${this.hfToken}`
                 },
                 body: JSON.stringify({
-                    inputs: prompt,
-                    parameters: { max_new_tokens: 500, temperature: 0.7 }
+                    model: "google/gemma-2-9b-it",
+                    messages: [
+                        { role: "system", content: systemPrompt },
+                        { role: "user", content: text }
+                    ],
+                    max_tokens: 500
                 })
             });
 
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || `HF Error ${response.status}`);
-            }
+            if (!response.ok) throw new Error(`API Error ${response.status}`);
 
             const data = await response.json();
-            const aiText = data[0].generated_text.trim();
+            const aiText = data.choices[0].message.content;
 
             this.removeTypingIndicator(typingId);
             this.processAiResponse(aiText);
@@ -193,26 +191,29 @@ Ensure the mission description matches the technical checkCondition.`;
             let missionsStr = "";
 
             if (this.hfToken) {
-                const prompt = `<s>[INST] ${systemPrompt}\n\nPlease return the 3 missions in the requested JSON format. [/INST]`;
+                const hfUrl = `https://api-inference.huggingface.co/v1/chat/completions`;
+                const proxiedUrl = `https://corsproxy.io/?${encodeURIComponent(hfUrl)}`;
 
-                const hfUrl = `https://api-inference.huggingface.co/models/microsoft/Phi-3-mini-4k-instruct`;
-
-                const response = await fetch(hfUrl, {
+                const response = await fetch(proxiedUrl, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${this.hfToken}`
                     },
                     body: JSON.stringify({
-                        inputs: prompt,
-                        parameters: { max_new_tokens: 800, temperature: 0.8 }
+                        model: "google/gemma-2-9b-it",
+                        messages: [
+                            { role: "system", content: systemPrompt },
+                            { role: "user", content: "Please return the 3 missions in the requested JSON format." }
+                        ],
+                        max_tokens: 1000
                     })
                 });
                 
-                if (!response.ok) throw new Error(`HF Error ${response.status}`);
+                if (!response.ok) throw new Error(`API Error ${response.status}`);
 
                 const data = await response.json();
-                missionsStr = data[0].generated_text.trim();
+                missionsStr = data.choices[0].message.content;
             } else {
                 throw new Error("Hugging Face Token not configured.");
             }
