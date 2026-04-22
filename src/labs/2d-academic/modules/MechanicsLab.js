@@ -118,22 +118,32 @@ export class MechanicsLab {
                         // REALISTIC SLOPE PHYSICS: Gravity projection
                         // Gravity pulls object ALONG the slope surface
                         const slopeDir = new Vec2(normal.y, -normal.x); // Tangent to slope
-                        const gravityMag = this.gravity * 20;
+                        const gravityMag = this.gravity * 25; // Slightly increased for better dynamics
                         const gravityVec = new Vec2(0, gravityMag);
                         const gravAlongSlope = gravityVec.dot(slopeDir);
                         
                         // Apply acceleration along slope
                         o.vel = o.vel.add(slopeDir.mult(gravAlongSlope * dt));
 
-                        // Reflect velocity (Bounce)
-                        if (o.vel.dot(normal) < 0) {
-                            const bounce = 0.3;
-                            o.vel = o.vel.reflect(normal).mult(bounce);
+                        // Separate velocity into Normal and Tangential components
+                        const vNormalMag = o.vel.dot(normal);
+                        const vNormal = normal.mult(vNormalMag);
+                        const vTangent = o.vel.sub(vNormal);
+
+                        // Reflect/Bounce only the Normal component if hitting
+                        if (vNormalMag < 0) {
+                            const bounce = 0.4;
+                            o.vel = vTangent.add(vNormal.mult(-bounce));
                         }
                         
-                        // Apply friction along slope
-                        const friction = slope.friction || 0.1;
-                        o.vel = o.vel.mult(1 - friction * dt * 60);
+                        // Apply friction only to Tangential component
+                        const friction = slope.friction || 0.05; // Default friction reduced for better rolling
+                        const damping = Math.max(0, 1 - friction * dt * 60);
+                        
+                        // Re-calculate tangent after bounce and apply friction
+                        const currentVNormal = normal.mult(o.vel.dot(normal));
+                        const currentVTangent = o.vel.sub(currentVNormal);
+                        o.vel = currentVNormal.add(currentVTangent.mult(damping));
                     }
                 });
             }

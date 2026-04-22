@@ -9,11 +9,12 @@ export class ChatController {
             this.geminiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
             this.yandexKey = import.meta.env.VITE_YANDEX_API_KEY || '';
             this.folderId = import.meta.env.VITE_YANDEX_FOLDER_ID || '';
+            this.modelId = import.meta.env.VITE_YANDEX_MODEL_ID || 'yandexgpt-lite/latest';
         } catch (e) {
             console.error("AI: Environment variables are inaccessible.", e);
-            this.geminiKey = '';
             this.yandexKey = '';
             this.folderId = '';
+            this.modelId = 'yandexgpt-lite/latest';
         }
         
         if (!this.yandexKey || !this.folderId) {
@@ -97,7 +98,7 @@ Actions include:
                     'Authorization': `Api-Key ${this.yandexKey}`
                 },
                 body: JSON.stringify({
-                    modelUri: `gpt://${this.folderId}/yandexgpt-lite/latest`,
+                    modelUri: `gpt://${this.folderId}/${this.modelId}`,
                     completionOptions: { stream: false, temperature: 0.6, maxTokens: "1000" },
                     messages: [
                         { role: "system", text: systemPrompt },
@@ -212,7 +213,7 @@ Ensure the mission description matches the technical checkCondition.`;
                         'Authorization': `Api-Key ${this.yandexKey}`
                     },
                     body: JSON.stringify({
-                        modelUri: `gpt://${this.folderId}/yandexgpt-lite/latest`,
+                        modelUri: `gpt://${this.folderId}/${this.modelId}`,
                         completionOptions: { stream: false, temperature: 0.8, maxTokens: "1000" },
                         messages: [
                             { role: "system", text: systemPrompt },
