@@ -6,19 +6,17 @@ export class ChatController {
         
         // Safe API Key Loading
         try {
-            this.geminiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
-            this.yandexKey = import.meta.env.VITE_YANDEX_API_KEY || '';
-            this.folderId = import.meta.env.VITE_YANDEX_FOLDER_ID || '';
-            this.modelId = import.meta.env.VITE_YANDEX_MODEL_ID || 'yandexgpt-lite/latest';
+            const env = (typeof import.meta !== 'undefined' && import.meta.env) || {};
+            this.hfToken = env.VITE_HF_TOKEN || '';
+            this.hfModel = env.VITE_HF_MODEL || 'mistralai/Mistral-7B-Instruct-v0.3';
         } catch (e) {
             console.error("AI: Environment variables are inaccessible.", e);
-            this.yandexKey = '';
-            this.folderId = '';
-            this.modelId = 'yandexgpt-lite/latest';
+            this.hfToken = '';
+            this.hfModel = 'mistralai/Mistral-7B-Instruct-v0.3';
         }
         
-        if (!this.yandexKey || !this.folderId) {
-            console.warn("TechPhys AI: Yandex API key or Folder ID missing. AI features will be limited.");
+        if (!this.hfToken) {
+            console.warn("TechPhys AI: Hugging Face Token missing. AI features will be disabled.");
         }
         
         this.setupUI();
@@ -72,56 +70,43 @@ export class ChatController {
         const typingId = this.addTypingIndicator();
 
         try {
-            const systemPrompt = `You are TechPhys AI, a brilliant and helpful physics assistant. Answer questions concisely and scientifically. Use markdown for formulas. 
+            const systemPrompt = `You are TechPhys AI, a brilliant and helpful physics assistant. Answer questions concisely and scientifically. 
 Current Laboratory: ${this.engine.activeLab}.
-Current Missions:
-${this.engine.missions ? this.engine.missions.getCurrentMissionsText() : 'None'}
+If the user asks to perform an action, include a JSON command: [COMMAND: ACTION_NAME, params]. 
+Actions: SPAWN_BALL, CLEAR, SET_GRAVITY, SHOW_MISSIONS.`;
 
-If the user asks to perform an action or needs help with tasks, include a JSON command at the end of your message in the format: [COMMAND: ACTION_NAME, params]. 
-Actions include: 
-- SPAWN_BALL: Create a ball in mechanics
-- CLEAR: Clear all objects in the current lab
-- SET_GRAVITY, value: Change gravity
-- SHOW_MISSIONS: Generate new AI missions/tasks for the user or refresh current ones.`;
-
-            if (!this.yandexKey || !this.folderId) {
+            if (!this.hfToken) {
                 this.removeTypingIndicator(typingId);
-                this.addMessage("Ошибка: API ключи Yandex не найдены в .env.", 'bot');
+                this.addMessage("Ошибка: Hugging Face токен не найден. Добавьте VITE_HF_TOKEN в .env.", 'bot');
                 return;
             }
 
-            // Use Proxy/Direct for Yandex GPT
-            const yandexBase = "https://llm.api.cloud.yandex.net/foundationModels/v1/completion";
-            const yandexUrl = import.meta.env.PROD 
-                ? `https://corsproxy.io/?${encodeURIComponent(yandexBase)}`
-                : `/yandex-api/foundationModels/v1/completion`;
+            // Mistral Prompt Format
+            const prompt = `<s>[INST] ${systemPrompt}\n\nUser: ${text} [/INST]`;
 
-            const response = await fetch(yandexUrl, {
+            // Hugging Face API URL with CORS Proxy
+            const hfUrl = `https://api-inference.huggingface.co/models/${this.hfModel}`;
+            const proxiedUrl = `https://corsproxy.io/?${encodeURIComponent(hfUrl)}`;
+
+            const response = await fetch(proxiedUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Api-Key ${this.yandexKey}`
+                    'Authorization': `Bearer ${this.hfToken}`
                 },
                 body: JSON.stringify({
-                    modelUri: `gpt://${this.folderId}/${this.modelId}`,
-                    completionOptions: { stream: false, temperature: 0.6, maxTokens: "1000" },
-                    messages: [
-                        { role: "system", text: systemPrompt },
-                        { role: "user", text: text }
-                    ]
+                    inputs: prompt,
+                    parameters: { max_new_tokens: 500, temperature: 0.7, return_full_text: false }
                 })
             });
 
             if (!response.ok) {
                 const errorData = await response.json();
-                if (response.status === 403) {
-                    throw new Error(`Permission Denied (403). Check your Folder ID: ${this.folderId}`);
-                }
-                throw new Error(errorData.error.message || `API Error ${response.status}`);
+                throw new Error(errorData.error || `HF Error ${response.status}`);
             }
 
             const data = await response.json();
-            const aiText = data.result.alternatives[0].message.text;
+            const aiText = data[0].generated_text.trim();
 
             this.removeTypingIndicator(typingId);
             this.processAiResponse(aiText);
@@ -208,44 +193,30 @@ Ensure the mission description matches the technical checkCondition.`;
 
             let missionsStr = "";
 
-            if (this.yandexKey && this.folderId) {
-                const yandexBase = "https://llm.api.cloud.yandex.net/foundationModels/v1/completion";
-                const yandexUrl = import.meta.env.PROD 
-                    ? `https://corsproxy.io/?${encodeURIComponent(yandexBase)}`
-                    : `/yandex-api/foundationModels/v1/completion`;
+            if (this.hfToken) {
+                const prompt = `<s>[INST] ${systemPrompt}\n\nPlease return the 3 missions in the requested JSON format. [/INST]`;
 
-                console.log(`AI: Fetching missions via ${import.meta.env.PROD ? 'CORS Bridge' : 'Local Proxy'}...`);
-                const response = await fetch(yandexUrl, {
+                const hfUrl = `https://api-inference.huggingface.co/models/${this.hfModel}`;
+                const proxiedUrl = `https://corsproxy.io/?${encodeURIComponent(hfUrl)}`;
+
+                const response = await fetch(proxiedUrl, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Api-Key ${this.yandexKey}`
+                        'Authorization': `Bearer ${this.hfToken}`
                     },
                     body: JSON.stringify({
-                        modelUri: `gpt://${this.folderId}/${this.modelId}`,
-                        completionOptions: { stream: false, temperature: 0.8, maxTokens: "1000" },
-                        messages: [
-                            { role: "system", text: systemPrompt },
-                            { role: "user", text: "Please return the 3 missions in the requested JSON format." }
-                        ]
+                        inputs: prompt,
+                        parameters: { max_new_tokens: 800, temperature: 0.8 }
                     })
                 });
                 
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    if (response.status === 403) {
-                        console.error(`AI Mission Permission Denied: Check Folder ID ${this.folderId}`);
-                    }
-                    throw new Error(`Yandex API Error (${response.status})`);
-                }
+                if (!response.ok) throw new Error(`HF Error ${response.status}`);
 
                 const data = await response.json();
-                if (!data.result || !data.result.alternatives) {
-                    throw new Error("Yandex GPT returned invalid data");
-                }
-                missionsStr = data.result.alternatives[0].message.text;
+                missionsStr = data[0].generated_text.trim();
             } else {
-                throw new Error("Yandex API Keys not configured.");
+                throw new Error("Hugging Face Token not configured.");
             }
 
             // Robust JSON Extraction: Find the first '{' and last '}'
