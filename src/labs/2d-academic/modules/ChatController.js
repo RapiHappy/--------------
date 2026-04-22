@@ -8,11 +8,11 @@ export class ChatController {
         try {
             const env = (typeof import.meta !== 'undefined' && import.meta.env) || {};
             this.hfToken = env.VITE_HF_TOKEN || '';
-            this.hfModel = env.VITE_HF_MODEL || 'mistralai/Mistral-7B-Instruct-v0.3';
+            this.hfModel = env.VITE_HF_MODEL || 'mistralai/Mistral-7B-Instruct-v0.2';
         } catch (e) {
             console.error("AI: Environment variables are inaccessible.", e);
             this.hfToken = '';
-            this.hfModel = 'mistralai/Mistral-7B-Instruct-v0.3';
+            this.hfModel = 'mistralai/Mistral-7B-Instruct-v0.2';
         }
         
         if (!this.hfToken) {
